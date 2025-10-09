@@ -21,6 +21,7 @@ dependencies:
   csv: ^6.0.0
   firebase_storage: ^13.0.2
   path: ^1.9.1
+  flutter_native_splash: ^2.4.6
 
 dev_dependencies:
   flutter_test:
@@ -29,3 +30,13 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+flutter_native_splash:
+  android: true
+  ios: true
+  web: false
+
+  android_12:
+    color: #ffffff
+    image: assets/logo/icon.png
+    branding: assets/logo/texticon.png
