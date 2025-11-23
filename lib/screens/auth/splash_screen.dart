@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'package:eventure/navigation/app_router.dart';
+import 'package:eventure/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -66,14 +69,13 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.forward();
 
     // Navigasi setelah animasi selesai
-    Timer(const Duration(milliseconds: 3500), () {
-      // Logika navigasi akan ditempatkan di sini.
-      // Untuk sekarang, kita arahkan ke halaman login sebagai default.
-      if (mounted) {
-        // Gunakan context.go untuk mengganti stack navigasi,
-        // sehingga pengguna tidak bisa kembali ke splash screen.
-        context.go('/login');
-      }
+    Timer(const Duration(milliseconds: 3500), () async {
+      if (!mounted) return;
+
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await (authProvider.isSignedIn())
+          ? context.go(AppRoutes.home)
+          : context.go(AppRoutes.login);
     });
   }
 

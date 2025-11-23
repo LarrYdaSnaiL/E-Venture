@@ -1,4 +1,4 @@
-package com.thethreemasketeers.eventure.eventure
+package com.thethreemasketeers.eventure
 
 import io.flutter.embedding.android.FlutterActivity
 

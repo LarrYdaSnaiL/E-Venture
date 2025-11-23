@@ -18,12 +18,19 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<bool> isSignedIn() async {
+    return (_authService.currentUser != null);
+  }
+
   /// Attempts to sign in a user and manages the loading state.
   /// Returns true on success, false on failure.
   Future<bool> signIn({required String email, required String password}) async {
     _setLoading(true);
     try {
-      await _authService.signInWithEmailAndPassword(email: email, password: password);
+      await _authService.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
       _setLoading(false);
       return true; // Indicate success
     } catch (e) {
@@ -37,7 +44,10 @@ class AuthProvider with ChangeNotifier {
   Future<bool> signUp({required String email, required String password}) async {
     _setLoading(true);
     try {
-      await _authService.signUpWithEmailAndPassword(email: email, password: password);
+      await _authService.signUpWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
       _setLoading(false);
       return true;
     } catch (e) {
