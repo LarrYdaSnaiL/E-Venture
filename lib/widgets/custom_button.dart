@@ -23,7 +23,7 @@ class CustomButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: isEnabled ? const Color(0xFFD64F5C) : const Color(0xFFFDE4E7),
         disabledBackgroundColor: const Color(0xFFFDE4E7),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         elevation: 0,
         padding: EdgeInsets.symmetric(horizontal: size.width * 0.06, vertical: size.height * 0.015),
       ),

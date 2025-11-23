@@ -1,5 +1,6 @@
 import 'package:eventure/navigation/app_router.dart';
 import 'package:eventure/widgets/custom_button.dart';
+import 'package:eventure/widgets/custom_textfield.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -73,21 +74,30 @@ class LoginScreen extends StatelessWidget {
                         padding: EdgeInsets.all(screenWidth * 0.04),
                         child: Column(
                           children: [
-                            TextField(
-                              decoration: InputDecoration(labelText: "Email"),
+                            CustomTextField(
+                              hintText: "Nama Lengkap...",
+                              icon: Icons.person_outline,
+                              keyboardType: TextInputType.name,
+                            ),
+
+                            SizedBox(height: screenHeight * 0.015),
+
+                            CustomTextField(
+                              hintText: "Email...",
+                              icon: Icons.email_outlined,
                               keyboardType: TextInputType.emailAddress,
-                              style: TextStyle(color: Colors.black, fontSize: screenWidth * 0.04),
                             ),
 
-                            SizedBox(height: screenHeight * 0.04),
+                            SizedBox(height: screenHeight * 0.015),
 
-                            TextField(
-                              decoration: InputDecoration(labelText: "Password"),
+                            CustomTextField(
+                              hintText: "Password...",
+                              icon: Icons.lock_outline,
                               keyboardType: TextInputType.visiblePassword,
-                              style: TextStyle(color: Colors.black, fontSize: screenWidth * 0.04),
+                              obscureText: true,
                             ),
 
-                            SizedBox(height: screenHeight * 0.04),
+                            SizedBox(height: screenHeight * 0.025),
 
                             CustomButton(
                               text: "Masuk",
