@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/splash_screen.dart';
+import '../screens/dashboard/dashboard_screen.dart';
+import '../screens/home/home_screen.dart';
+import '../screens/profile/profile_screen.dart';
+import '../widgets/bottom_nav_bar.dart';
 
 class AppRoutes {
   static const String splash = '/';
   static const String login = '/login';
   static const String register = '/register';
   static const String home = '/home';
+  static const String dashboard = '/dashboard';
+  static const String profile = '/profile';
 }
 
 GoRouter createRouter() {
@@ -28,40 +34,40 @@ GoRouter createRouter() {
         builder: (context, state) => const LoginScreen(),
         name: "login",
       ),
-      // StatefulShellRoute.indexedStack(
-      //   builder: (context, state, navigationShell) {
-      //     return BottomNavigationShell(navigationShell: navigationShell);
-      //   },
-      //   branches: [
-      //     StatefulShellBranch(
-      //       routes: [
-      //         GoRoute(
-      //           path: AppRoutes.home,
-      //           name: 'home',
-      //           builder: (context, state) => const HomeScreen(),
-      //         ),
-      //       ],
-      //     ),
-      //     StatefulShellBranch(
-      //       routes: [
-      //         GoRoute(
-      //           path: AppRoutes.favorites,
-      //           name: 'favorite',
-      //           builder: (context, state) => const FavoriteScreen(),
-      //         ),
-      //       ],
-      //     ),
-      //     StatefulShellBranch(
-      //       routes: [
-      //         GoRoute(
-      //           path: AppRoutes.profile,
-      //           name: 'profile',
-      //           builder: (context, state) => const ProfileScreen(),
-      //         ),
-      //       ],
-      //     ),
-      //   ],
-      // ),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return BottomNavigationShell(navigationShell: navigationShell);
+        },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.home,
+                name: 'home',
+                builder: (context, state) => const HomeScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.dashboard,
+                name: 'dashboard',
+                builder: (context, state) => const DashboardScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.profile,
+                name: 'profile',
+                builder: (context, state) => const ProfileScreen(),
+              ),
+            ],
+          ),
+        ],
+      ),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(
