@@ -2,11 +2,21 @@ import 'package:eventure/navigation/app_router.dart';
 import 'package:eventure/utils/exit_confirmation.dart';
 import 'package:eventure/widgets/custom_button.dart';
 import 'package:eventure/widgets/custom_textfield.dart';
+import 'package:eventure/widgets/custom_file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  String? selectedFileName;
+  PlatformFile? selectedFile;
 
   @override
   Widget build(BuildContext context) {
