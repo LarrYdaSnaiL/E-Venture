@@ -1,5 +1,5 @@
 import 'package:eventure/navigation/app_router.dart';
-import 'package:eventure/widgets/screen_size.dart';
+import 'package:eventure/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -8,8 +8,8 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = getScreenWidth(context);
-    final screenHeight = getScreenHeight(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       backgroundColor: Color(0xFFF78DA7),
@@ -23,19 +23,13 @@ class LoginScreen extends StatelessWidget {
             child: Container(
               width: maxWidth,
               height: constraint.maxHeight,
-              padding: EdgeInsets.only(
-                top: getScreenWidth(context) * 0.06,
-                bottom: 0,
-              ),
+              padding: EdgeInsets.only(top: MediaQuery.of(context).size.width * 0.06, bottom: 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SizedBox(height: screenHeight * 0.15),
 
-                  Image.asset(
-                    "assets/logo/inappicon.png",
-                    width: screenWidth * 0.3,
-                  ),
+                  Image.asset("assets/logo/inappicon.png", width: screenWidth * 0.3),
 
                   SizedBox(height: screenHeight * 0.04),
 
@@ -82,32 +76,25 @@ class LoginScreen extends StatelessWidget {
                             TextField(
                               decoration: InputDecoration(labelText: "Email"),
                               keyboardType: TextInputType.emailAddress,
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: screenWidth * 0.04,
-                              ),
+                              style: TextStyle(color: Colors.black, fontSize: screenWidth * 0.04),
                             ),
 
                             SizedBox(height: screenHeight * 0.04),
 
                             TextField(
-                              decoration: InputDecoration(
-                                labelText: "Password",
-                              ),
+                              decoration: InputDecoration(labelText: "Password"),
                               keyboardType: TextInputType.visiblePassword,
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: screenWidth * 0.04,
-                              ),
+                              style: TextStyle(color: Colors.black, fontSize: screenWidth * 0.04),
                             ),
 
                             SizedBox(height: screenHeight * 0.04),
 
-                            ElevatedButton(
+                            CustomButton(
+                              text: "Masuk",
                               onPressed: () {
                                 context.go(AppRoutes.home);
                               },
-                              child: Text("Masuk"),
+                              isEnabled: true,
                             ),
                           ],
                         ),
