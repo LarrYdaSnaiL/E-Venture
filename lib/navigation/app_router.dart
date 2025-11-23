@@ -6,6 +6,8 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/splash_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/home/home_screen.dart';
+import '../screens/profile/aboutapp_screen.dart';
+import '../screens/profile/editprofile_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../widgets/bottom_nav_bar.dart';
 
@@ -16,6 +18,8 @@ class AppRoutes {
   static const String home = '/home';
   static const String dashboard = '/dashboard';
   static const String profile = '/profile';
+  static const String editProfile = '/editProfile';
+  static const String aboutApp = '/about';
 }
 
 GoRouter createRouter() {
@@ -76,6 +80,17 @@ GoRouter createRouter() {
             ],
           ),
         ],
+      ),
+
+      GoRoute(
+        path: AppRoutes.editProfile,
+        builder: (context, state) => const EditProfileScreen(),
+        name: "editProfile",
+      ),
+
+      GoRoute(
+        path: '/about',
+        builder: (context, state) => const AboutAppScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
