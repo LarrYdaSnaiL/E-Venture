@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:eventure/navigation/app_router.dart';
 import 'package:eventure/providers/auth_provider.dart';
+import 'package:eventure/utils/exit_confirmation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -87,49 +88,51 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // Sebaiknya gunakan warna yang konsisten dengan brand Anda
-      backgroundColor: const Color(0xFFF78DA7), // Warna pink dari logo Anda
-      body: Center(
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            return SizedBox(
-              width: 280, // Lebar total gabungan icon dan teks
-              height: 100, // Tinggi icon
-              child: Stack(
-                alignment: _alignmentAnimation.value,
-                children: [
-                  // Logo Icon
-                  FadeTransition(
-                    opacity: _iconFadeAnimation,
-                    child: ScaleTransition(
-                      scale: _scaleAnimation,
-                      child: Image.asset(
-                        'assets/logo/icon.png',
-                        width: 100,
-                        height: 100,
+    return ExitConfirmation(
+      child: Scaffold(
+        // Sebaiknya gunakan warna yang konsisten dengan brand Anda
+        backgroundColor: const Color(0xFFF78DA7), // Warna pink dari logo Anda
+        body: Center(
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return SizedBox(
+                width: 280, // Lebar total gabungan icon dan teks
+                height: 100, // Tinggi icon
+                child: Stack(
+                  alignment: _alignmentAnimation.value,
+                  children: [
+                    // Logo Icon
+                    FadeTransition(
+                      opacity: _iconFadeAnimation,
+                      child: ScaleTransition(
+                        scale: _scaleAnimation,
+                        child: Image.asset(
+                          'assets/logo/icon.png',
+                          width: 100,
+                          height: 100,
+                        ),
                       ),
                     ),
-                  ),
 
-                  // Teks Logo
-                  // Padding untuk memberi jarak antara icon dan teks
-                  Padding(
-                    padding: const EdgeInsets.only(left: 110),
-                    // 100 (lebar icon) + 10 (jarak)
-                    child: FadeTransition(
-                      opacity: _textFadeAnimation,
-                      child: Image.asset(
-                        'assets/logo/textonly.png',
-                        width: 170,
+                    // Teks Logo
+                    // Padding untuk memberi jarak antara icon dan teks
+                    Padding(
+                      padding: const EdgeInsets.only(left: 110),
+                      // 100 (lebar icon) + 10 (jarak)
+                      child: FadeTransition(
+                        opacity: _textFadeAnimation,
+                        child: Image.asset(
+                          'assets/logo/textonly.png',
+                          width: 170,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

@@ -19,8 +19,14 @@ class CustomTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final dynamicHeight = (size.height * 0.06).clamp(45.0, 60.0);
+
+    final dynamicFontSize = (size.width * 0.04).clamp(14.0, 18.0);
+    final dynamicIconSize = (size.width * 0.06).clamp(20.0, 24.0);
 
     return Container(
+      height: dynamicHeight,
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -30,9 +36,10 @@ class CustomTextField extends StatelessWidget {
         controller: controller,
         keyboardType: keyboardType,
         obscureText: obscureText,
+        textAlignVertical: TextAlignVertical.center,
         style: TextStyle(
           fontFamily: 'Poppins',
-          fontSize: size.width * 0.04,
+          fontSize: dynamicFontSize,
           color: Colors.black,
           fontWeight: FontWeight.w400,
         ),
@@ -40,16 +47,18 @@ class CustomTextField extends StatelessWidget {
           hintText: hintText,
           hintStyle: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: size.width * 0.04,
+            fontSize: dynamicFontSize,
             color: const Color(0xFFCCCCCC),
             fontWeight: FontWeight.w400,
           ),
-          prefixIcon: Icon(icon, color: const Color(0xFFD64F5C), size: size.width * 0.06),
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: size.width * 0.04,
-            vertical: size.height * 0.02,
+          prefixIcon: Icon(
+            icon,
+            color: const Color(0xFFD64F5C),
+            size: dynamicIconSize,
           ),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(horizontal: size.width * 0.05),
+          isDense: true,
         ),
       ),
     );

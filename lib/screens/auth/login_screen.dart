@@ -1,4 +1,5 @@
 import 'package:eventure/navigation/app_router.dart';
+import 'package:eventure/utils/exit_confirmation.dart';
 import 'package:eventure/widgets/custom_button.dart';
 import 'package:eventure/widgets/custom_textfield.dart';
 import 'package:flutter/material.dart';
@@ -12,110 +13,156 @@ class LoginScreen extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    return Scaffold(
-      backgroundColor: Color(0xFFF78DA7),
-      resizeToAvoidBottomInset: false,
-      body: LayoutBuilder(
-        builder: (context, constraint) {
-          final isLargeScreen = constraint.maxWidth > 600;
-          final maxWidth = isLargeScreen ? 400.0 : constraint.maxWidth;
+    return ExitConfirmation(
+      child: Center(
+        child: Scaffold(
+          backgroundColor: Color(0xFFF78DA7),
+          resizeToAvoidBottomInset: false,
+          body: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(height: screenHeight * 0.2),
 
-          return Center(
-            child: Container(
-              width: maxWidth,
-              height: constraint.maxHeight,
-              padding: EdgeInsets.only(top: MediaQuery.of(context).size.width * 0.06, bottom: 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(height: screenHeight * 0.15),
+              Image.asset(
+                "assets/logo/inappicon.png",
+                width: screenWidth * 0.3,
+              ),
 
-                  Image.asset("assets/logo/inappicon.png", width: screenWidth * 0.3),
+              SizedBox(height: screenHeight * 0.03),
 
-                  SizedBox(height: screenHeight * 0.04),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          // TODO: NANTI UNTUK FIELD MASUK
-                        },
-                        child: Text("Masuk"),
-                      ),
-
-                      SizedBox(width: screenWidth * 0.1),
-
-                      ElevatedButton(
-                        onPressed: () {
-                          // TODO: NANTI UNTUK FIELD DAFTAR
-                        },
-                        child: Text("Daftar"),
-                      ),
-                    ],
+              Expanded(
+                child: Card(
+                  elevation: 5,
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(15),
+                      topRight: Radius.circular(15),
+                    ),
                   ),
+                  color: Color(0xFFFDF5F7),
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        SizedBox(height: screenHeight * 0.02),
 
-                  SizedBox(height: screenHeight * 0.04),
-
-                  Expanded(
-                    child: Card(
-                      elevation: 5,
-                      margin: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(10),
-                          bottomLeft: Radius.circular(0),
-                          bottomRight: Radius.circular(0),
+                        CustomTextField(
+                          hintText: "Email",
+                          icon: Icons.email,
+                          keyboardType: TextInputType.emailAddress,
                         ),
-                      ),
-                      color: Color(0xFFFDF5F7),
-                      child: Padding(
-                        padding: EdgeInsets.all(screenWidth * 0.04),
-                        child: Column(
+
+                        SizedBox(height: screenHeight * 0.02),
+
+                        CustomTextField(
+                          hintText: "Password",
+                          icon: Icons.password,
+                          keyboardType: TextInputType.visiblePassword,
+                        ),
+
+                        SizedBox(height: screenHeight * 0.04),
+
+                        CustomButton(
+                          text: "Masuk",
+                          onPressed: () => context.go(AppRoutes.home),
+                        ),
+
+                        SizedBox(height: screenHeight * 0.02),
+
+                        Row(
                           children: [
-                            CustomTextField(
-                              hintText: "Nama Lengkap...",
-                              icon: Icons.person_outline,
-                              keyboardType: TextInputType.name,
+                            Expanded(
+                              child: Divider(
+                                color: Color(0xFF8A8A8A),
+                                thickness: 0.5,
+                              ),
                             ),
 
-                            SizedBox(height: screenHeight * 0.015),
-
-                            CustomTextField(
-                              hintText: "Email...",
-                              icon: Icons.email_outlined,
-                              keyboardType: TextInputType.emailAddress,
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16.0),
+                              child: Text(
+                                "Atau",
+                                style: TextStyle(
+                                  color: Color(0xFF8A8A8A),
+                                  fontSize: (screenWidth * 0.04).clamp(
+                                    14.0,
+                                    18.0,
+                                  ),
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
                             ),
 
-                            SizedBox(height: screenHeight * 0.015),
-
-                            CustomTextField(
-                              hintText: "Password...",
-                              icon: Icons.lock_outline,
-                              keyboardType: TextInputType.visiblePassword,
-                              obscureText: true,
-                            ),
-
-                            SizedBox(height: screenHeight * 0.025),
-
-                            CustomButton(
-                              text: "Masuk",
-                              onPressed: () {
-                                context.go(AppRoutes.home);
-                              },
-                              isEnabled: true,
+                            Expanded(
+                              child: Divider(
+                                color: Color(0xFF8A8A8A),
+                                thickness: 0.5,
+                              ),
                             ),
                           ],
                         ),
-                      ),
+
+                        SizedBox(height: screenHeight * 0.02),
+
+                        Card(
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          color: Colors.white,
+                          child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Image.asset(
+                              "assets/images/google.png",
+                              width: screenWidth * 0.1,
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: screenHeight * 0.02),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Belum punya akun?",
+                              style: TextStyle(
+                                color: Color(0xFF8A8A8A),
+                                fontSize: (screenWidth * 0.04).clamp(
+                                  14.0,
+                                  18.0,
+                                ),
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => context.go(AppRoutes.register),
+                              child: Text(
+                                "Daftar",
+                                style: TextStyle(
+                                  color: Color(0xFFD64F5C),
+                                  fontSize: (screenWidth * 0.04).clamp(
+                                    14.0,
+                                    18.0,
+                                  ),
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
-          );
-        },
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -1,13 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:eventure/widgets/app_scaffold.dart';
+import 'package:flutter/cupertino.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard')),
-      body: const Center(child: Text('Dashboard Screen')),
-    );
+    return AppScaffold(body: Text("Dashboard"));
   }
 }

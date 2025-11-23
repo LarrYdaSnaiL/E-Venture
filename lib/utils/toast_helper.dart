@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-/// A reusable helper class to show consistent toast notifications across the app.
 class ToastHelper {
-  /// Shows a short toast message at the bottom of the screen.
   static void showShortToast(String message) {
     Fluttertoast.showToast(
       msg: message,

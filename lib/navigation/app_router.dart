@@ -1,3 +1,5 @@
+import 'package:eventure/screens/auth/register_screen.dart';
+import 'package:eventure/utils/exit_confirmation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../screens/auth/login_screen.dart';
@@ -34,9 +36,16 @@ GoRouter createRouter() {
         builder: (context, state) => const LoginScreen(),
         name: "login",
       ),
+      GoRoute(
+        path: AppRoutes.register,
+        builder: (context, state) => const RegisterScreen(),
+        name: "register",
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
-          return BottomNavigationShell(navigationShell: navigationShell);
+          return ExitConfirmation(
+            child: BottomNavigationShell(navigationShell: navigationShell),
+          );
         },
         branches: [
           StatefulShellBranch(

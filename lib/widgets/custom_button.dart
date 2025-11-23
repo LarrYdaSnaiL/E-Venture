@@ -21,17 +21,22 @@ class CustomButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: isEnabled ? onPressed : null,
       style: ElevatedButton.styleFrom(
-        backgroundColor: isEnabled ? const Color(0xFFD64F5C) : const Color(0xFFFDE4E7),
+        backgroundColor: isEnabled
+            ? const Color(0xFFD64F5C)
+            : const Color(0xFFFDE4E7),
         disabledBackgroundColor: const Color(0xFFFDE4E7),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         elevation: 0,
-        padding: EdgeInsets.symmetric(horizontal: size.width * 0.06, vertical: size.height * 0.015),
+        padding: EdgeInsets.symmetric(
+          horizontal: size.width * 0.06,
+          vertical: size.height * 0.015,
+        ),
       ),
       child: Text(
         text,
         style: TextStyle(
           fontFamily: 'Poppins',
-          fontSize: isLandscape ? size.height * 0.03 : size.width * 0.05,
+          fontSize: isLandscape ? size.height * 0.02 : size.width * 0.04,
           fontWeight: FontWeight.w600,
           color: isEnabled ? Colors.white : const Color(0xFFD64F5C),
         ),
