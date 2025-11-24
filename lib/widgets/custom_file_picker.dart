@@ -45,11 +45,12 @@ class CustomFilePicker extends StatelessWidget {
               ElevatedButton(
                 onPressed: () async {
                   try {
-                    FilePickerResult? result = await FilePicker.platform.pickFiles(
-                      type: FileType.custom,
-                      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-                      allowMultiple: false,
-                    );
+                    FilePickerResult? result = await FilePicker.platform
+                        .pickFiles(
+                          type: FileType.custom,
+                          allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+                          allowMultiple: false,
+                        );
 
                     if (result != null && result.files.isNotEmpty) {
                       final file = result.files.first;
@@ -81,7 +82,9 @@ class CustomFilePicker extends StatelessWidget {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFD64F5C),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                   elevation: 0,
                   padding: EdgeInsets.symmetric(
                     horizontal: size.width * 0.04,
@@ -107,7 +110,9 @@ class CustomFilePicker extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: size.width * 0.032,
-                    color: fileName != null ? Colors.black : const Color(0xFFCCCCCC),
+                    color: fileName != null
+                        ? Colors.black
+                        : const Color(0xFFCCCCCC),
                     fontWeight: FontWeight.w400,
                   ),
                   overflow: TextOverflow.ellipsis,

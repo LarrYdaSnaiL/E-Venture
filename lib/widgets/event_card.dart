@@ -50,7 +50,11 @@ class EventCard extends StatelessWidget {
                           width: double.infinity,
                           height: size.height * 0.12,
                           color: Colors.grey[300],
-                          child: Icon(Icons.image, size: 50, color: Colors.grey),
+                          child: Icon(
+                            Icons.image,
+                            size: 50,
+                            color: Colors.grey,
+                          ),
                         );
                       },
                     )
@@ -64,7 +68,11 @@ class EventCard extends StatelessWidget {
                           width: double.infinity,
                           height: size.height * 0.12,
                           color: Colors.grey[300],
-                          child: Icon(Icons.image, size: 50, color: Colors.grey),
+                          child: Icon(
+                            Icons.image,
+                            size: 50,
+                            color: Colors.grey,
+                          ),
                         );
                       },
                     ),
@@ -157,7 +165,9 @@ class EventCard extends StatelessWidget {
                         onPressed: onButtonPressed,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Color(0xFFD64F5C),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
                           elevation: 0,
                           padding: EdgeInsets.symmetric(
                             horizontal: size.width * 0.02,

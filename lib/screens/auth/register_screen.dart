@@ -33,7 +33,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
             children: [
               SizedBox(height: screenHeight * 0.2),
 
-              Image.asset("assets/logo/inappicon.png", width: screenWidth * 0.3),
+              Image.asset(
+                "assets/logo/inappicon.png",
+                width: screenWidth * 0.3,
+              ),
 
               SizedBox(height: screenHeight * 0.03),
 
@@ -55,7 +58,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         children: [
                           SizedBox(height: screenHeight * 0.02),
 
-                          CustomTextField(hintText: "Nama Lengkap", icon: Icons.person),
+                          CustomTextField(
+                            hintText: "Nama Lengkap",
+                            icon: Icons.person,
+                          ),
 
                           SizedBox(height: screenHeight * 0.015),
 
@@ -91,13 +97,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                           SizedBox(height: screenHeight * 0.025),
 
-                          CustomButton(text: "Daftar", onPressed: () => context.go(AppRoutes.home)),
+                          CustomButton(
+                            text: "Daftar",
+                            onPressed: () => context.go(AppRoutes.home),
+                          ),
 
                           SizedBox(height: screenHeight * 0.02),
 
                           Row(
                             children: [
-                              Expanded(child: Divider(color: Color(0xFF8A8A8A), thickness: 0.5)),
+                              Expanded(
+                                child: Divider(
+                                  color: Color(0xFF8A8A8A),
+                                  thickness: 0.5,
+                                ),
+                              ),
 
                               Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 16.0),
@@ -105,14 +119,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   "Atau",
                                   style: TextStyle(
                                     color: Color(0xFF8A8A8A),
-                                    fontSize: (screenWidth * 0.04).clamp(14.0, 18.0),
+                                    fontSize: (screenWidth * 0.04).clamp(
+                                      14.0,
+                                      18.0,
+                                    ),
                                     fontFamily: 'Poppins',
                                     fontWeight: FontWeight.w400,
                                   ),
                                 ),
                               ),
 
-                              Expanded(child: Divider(color: Color(0xFF8A8A8A), thickness: 0.5)),
+                              Expanded(
+                                child: Divider(
+                                  color: Color(0xFF8A8A8A),
+                                  thickness: 0.5,
+                                ),
+                              ),
                             ],
                           ),
 
@@ -120,7 +142,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                           Card(
                             elevation: 5,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(100),
+                            ),
                             color: Colors.white,
                             child: Padding(
                               padding: EdgeInsets.all(8.0),
@@ -140,7 +164,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 "Sudah punya akun?",
                                 style: TextStyle(
                                   color: Color(0xFF8A8A8A),
-                                  fontSize: (screenWidth * 0.04).clamp(14.0, 18.0),
+                                  fontSize: (screenWidth * 0.04).clamp(
+                                    14.0,
+                                    18.0,
+                                  ),
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.w400,
                                 ),
@@ -151,7 +178,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   "Masuk",
                                   style: TextStyle(
                                     color: Color(0xFFD64F5C),
-                                    fontSize: (screenWidth * 0.04).clamp(14.0, 18.0),
+                                    fontSize: (screenWidth * 0.04).clamp(
+                                      14.0,
+                                      18.0,
+                                    ),
                                     fontFamily: 'Poppins',
                                     fontWeight: FontWeight.w600,
                                   ),

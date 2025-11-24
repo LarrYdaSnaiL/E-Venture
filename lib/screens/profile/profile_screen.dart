@@ -1,76 +1,83 @@
 import 'package:eventure/navigation/app_router.dart';
+import 'package:eventure/widgets/app_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
+import '../../widgets/app_header.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final Color scaffoldBg = const Color(0xFFF9F5F6);
-    final Color brandColor = const Color(0xFFE55B5B);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
-    return Scaffold(
-      backgroundColor: scaffoldBg,
+    return AppScaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          // REMOVED: The outer Padding that was here
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Header with its own padding
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-                child: _buildCustomHeader(brandColor),
-              ),
+              const AppHeader(),
 
-              // 2. THE FULL WIDTH LINE
-              // Since there is no parent padding blocking it, this touches both edges.
-              const Divider(
-                  thickness: 1,
-                  height: 1,
-                  color: Colors.black26 // Adjust opacity for lighter/darker line
-              ),
-
-              // 3. The rest of the content with its own padding
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   children: [
                     _buildProfileHeader(),
                     const SizedBox(height: 20),
-
-                    // (Optional) Inner divider for the profile section
                     const Divider(thickness: 1, color: Colors.black12),
                     const SizedBox(height: 15),
 
-                    // Menu Groups
                     MenuSection(
                       title: "Profil",
                       items: [
-                        MenuItemData(icon: Icons.person_outline, text: "Edit Profil", onTap: ()=> context.go(AppRoutes.editProfile)),
-                        MenuItemData(icon: Icons.notifications_none, text: "Notifikasi" , onTap: ()=> context.go('/editprofil')),
-                        MenuItemData(icon: Icons.vpn_key_outlined, text: "Ubah Password" , onTap: ()=> _showChangePasswordModal(context), ),
+                        MenuItemData(
+                          icon: Icons.person_outline,
+                          text: "Edit Profil",
+                          onTap: () => context.go(AppRoutes.editProfile),
+                        ),
+                        MenuItemData(
+                          icon: Icons.notifications_none,
+                          text: "Notifikasi",
+                          onTap: () => context.go('/editprofil'),
+                        ),
+                        MenuItemData(
+                          icon: Icons.vpn_key_outlined,
+                          text: "Ubah Password",
+                          onTap: () => _showChangePasswordModal(context),
+                        ),
                       ],
-                      brandColor: brandColor,
+                      // brandColor: brandColor,
                     ),
                     const SizedBox(height: 20),
                     MenuSection(
                       title: "Bantuan",
                       items: [
-                        MenuItemData(icon: Icons.support_agent, text: "Pusat Bantuan" , onTap: ()=> context.go('/editprofil')),
+                        MenuItemData(
+                          icon: Icons.support_agent,
+                          text: "Pusat Bantuan",
+                          onTap: () => context.go('/editprofil'),
+                        ),
                       ],
-                      brandColor: brandColor,
+                      // brandColor: brandColor,
                     ),
                     const SizedBox(height: 20),
                     MenuSection(
                       title: "Lainnya",
                       items: [
-                        MenuItemData(icon: Icons.info_outline, text: "Tentang Aplikasi" , onTap: () => context.go('/about'),),
-                        MenuItemData(icon: Icons.logout, text: "Keluar" , onTap: ()=> context.go(AppRoutes.login)),
+                        MenuItemData(
+                          icon: Icons.info_outline,
+                          text: "Tentang Aplikasi",
+                          onTap: () => context.go('/about'),
+                        ),
+                        MenuItemData(
+                          icon: Icons.logout,
+                          text: "Keluar",
+                          onTap: () => context.go(AppRoutes.login),
+                        ),
                       ],
-                      brandColor: brandColor,
+                      // brandColor: brandColor,
                     ),
                   ],
                 ),
@@ -81,7 +88,6 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
-
 
   // --- FUNGSI UNTUK MENAMPILKAN POP-UP UBAH PASSWORD ---
   void _showChangePasswordModal(BuildContext context) {
@@ -166,7 +172,9 @@ class ProfileScreen extends StatelessWidget {
                       onPressed: () {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Password berhasil diubah!")),
+                          const SnackBar(
+                            content: Text("Password berhasil diubah!"),
+                          ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -178,9 +186,10 @@ class ProfileScreen extends StatelessWidget {
                       child: const Text(
                         "Simpan",
                         style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16),
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ),
@@ -198,19 +207,28 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildPasswordInput({
     required String label,
     required TextEditingController controller,
-    required bool isObscure,          // Data: Apakah sedang tersembunyi?
-    required VoidCallback onToggle,   // Aksi: Apa yang terjadi saat mata diklik?
+    required bool isObscure, // Data: Apakah sedang tersembunyi?
+    required VoidCallback onToggle, // Aksi: Apa yang terjadi saat mata diklik?
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+            color: Colors.grey,
+          ),
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
           obscureText: isObscure, // Gunakan variabel dynamic
           decoration: InputDecoration(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey.shade300),
@@ -223,37 +241,15 @@ class ProfileScreen extends StatelessWidget {
             suffixIcon: IconButton(
               icon: Icon(
                 // Ganti icon berdasarkan status
-                isObscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                isObscure
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
                 color: Colors.grey,
               ),
               onPressed: onToggle, // Panggil fungsi toggle saat diklik
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  // --- Sub-widgets for the page structure ---
-
-  Widget _buildCustomHeader(Color color) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.check_box_outlined, color: color, size: 30),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("E-", style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16, height: 1)),
-                Text("VENTURE", style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16, height: 1)),
-              ],
-            )
-          ],
-        ),
-        Icon(Icons.notifications_outlined, color: color, size: 28),
       ],
     );
   }
@@ -292,15 +288,12 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-// ==========================================
-// REUSABLE WIDGETS (The Clean Component)
-// ==========================================
-
 // 1. Data Class: Defines what a menu item looks like
 class MenuItemData {
   final IconData icon;
   final String text;
   final VoidCallback? onTap;
+
   MenuItemData({
     required this.icon,
     required this.text,
@@ -312,13 +305,14 @@ class MenuItemData {
 class MenuSection extends StatelessWidget {
   final String title;
   final List<MenuItemData> items;
-  final Color brandColor;
+
+  // final Color brandColor;
 
   const MenuSection({
     super.key,
     required this.title,
     required this.items,
-    required this.brandColor,
+    // required this.brandColor,
   });
 
   @override
@@ -330,10 +324,7 @@ class MenuSection extends StatelessWidget {
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
             title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
           ),
         ),
         Container(
@@ -357,18 +348,14 @@ class MenuSection extends StatelessWidget {
                 children: [
                   ListTile(
                     leading: Icon(
-                        item.icon,
-                        color: const Color(0xFFD65B5B),
-                        size: 22
+                      item.icon,
+                      color: const Color(0xFFD65B5B),
+                      size: 22,
                     ),
                     minLeadingWidth: 20,
                     title: Row(
                       children: [
-                        Container(
-                          height: 24,
-                          width: 1,
-                          color: Colors.black12,
-                        ),
+                        Container(height: 24, width: 1, color: Colors.black12),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -384,7 +371,10 @@ class MenuSection extends StatelessWidget {
                     ),
                     dense: true,
                     visualDensity: const VisualDensity(vertical: -2),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 0,
+                    ),
 
                     // --- BAGIAN INI YANG DIPERBAIKI ---
                     onTap: item.onTap,
@@ -392,7 +382,8 @@ class MenuSection extends StatelessWidget {
                   ),
                   if (!isLast)
                     const Padding(
-                      padding: EdgeInsets.only(left: 55, right: 16), // Saya ubah jadi 55 lagi biar rapi
+                      padding: EdgeInsets.only(left: 55, right: 16),
+                      // Saya ubah jadi 55 lagi biar rapi
                       child: Divider(height: 1, color: Colors.black12),
                     ),
                 ],
