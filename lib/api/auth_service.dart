@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:path/path.dart';
+import '../navigation/app_router.dart';
 import '../utils/toast_helper.dart';
 
 /// A service class that wraps Firebase Authentication logic.
@@ -7,6 +8,7 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
+
   User? get currentUser => _auth.currentUser;
 
   /// Signs in a user and shows toast notifications for common errors.
@@ -15,10 +17,8 @@ class AuthService {
     required String password,
   }) async {
     try {
-      final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      final UserCredential userCredential = await _auth
+          .signInWithEmailAndPassword(email: email, password: password);
       return userCredential.user?.uid;
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
@@ -39,10 +39,8 @@ class AuthService {
     required String password,
   }) async {
     try {
-      final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      final UserCredential userCredential = await _auth
+          .createUserWithEmailAndPassword(email: email, password: password);
       return userCredential.user?.uid;
     } on FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
@@ -80,7 +78,10 @@ class AuthService {
       );
       await user.reauthenticateWithCredential(credential);
       await user.updatePassword(newPassword);
-      ToastHelper.showShortToast('Password berhasil diubah.');
+      ToastHelper.showShortToast(
+        'Password berhasil diubah. Silakan masuk kembali',
+      );
+      await signOut();
     } on FirebaseAuthException catch (e) {
       if (e.code == 'wrong-password') {
         ToastHelper.showShortToast('Password saat ini salah.');
@@ -106,4 +107,3 @@ class AuthService {
     }
   }
 }
-

@@ -6,8 +6,8 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/splash_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/home/home_screen.dart';
-import '../screens/profile/aboutapp_screen.dart';
-import '../screens/profile/editprofile_screen.dart';
+import '../screens/profile/about_app_screen.dart';
+import '../screens/profile/edit_profile_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../widgets/bottom_nav_bar.dart';
 

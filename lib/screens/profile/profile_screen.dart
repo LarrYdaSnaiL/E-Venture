@@ -1,5 +1,9 @@
 import 'package:eventure/navigation/app_router.dart';
+import 'package:eventure/providers/auth_provider.dart';
+import 'package:eventure/utils/toast_helper.dart';
+import 'package:eventure/utils/validators.dart';
 import 'package:eventure/widgets/app_scaffold.dart';
+import 'package:eventure/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../widgets/app_header.dart';
@@ -9,9 +13,6 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
     return AppScaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -24,7 +25,8 @@ class ProfileScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   children: [
-                    _buildProfileHeader(),
+                    _buildProfileHeader(context),
+
                     const SizedBox(height: 20),
                     const Divider(thickness: 1, color: Colors.black12),
                     const SizedBox(height: 15),
@@ -48,7 +50,6 @@ class ProfileScreen extends StatelessWidget {
                           onTap: () => _showChangePasswordModal(context),
                         ),
                       ],
-                      // brandColor: brandColor,
                     ),
                     const SizedBox(height: 20),
                     MenuSection(
@@ -60,7 +61,6 @@ class ProfileScreen extends StatelessWidget {
                           onTap: () => context.go('/editprofil'),
                         ),
                       ],
-                      // brandColor: brandColor,
                     ),
                     const SizedBox(height: 20),
                     MenuSection(
@@ -74,10 +74,14 @@ class ProfileScreen extends StatelessWidget {
                         MenuItemData(
                           icon: Icons.logout,
                           text: "Keluar",
-                          onTap: () => context.go(AppRoutes.login),
+                          onTap: () => AuthProvider().signOut().then(
+                            (value) => {
+                              ToastHelper.showShortToast("Berhasil Keluar"),
+                              if (context.mounted) context.go(AppRoutes.login),
+                            },
+                          ),
                         ),
                       ],
-                      // brandColor: brandColor,
                     ),
                   ],
                 ),
@@ -89,13 +93,12 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // --- FUNGSI UNTUK MENAMPILKAN POP-UP UBAH PASSWORD ---
   void _showChangePasswordModal(BuildContext context) {
+    final TextEditingController currentPassController = TextEditingController();
     final TextEditingController newPassController = TextEditingController();
     final TextEditingController confirmPassController = TextEditingController();
-    final Color brandColor = const Color(0xFFE55B5B);
 
-    // Variabel state lokal untuk pop-up ini saja
+    bool obscureCurrent = true;
     bool obscureNew = true;
     bool obscureConfirm = true;
 
@@ -106,8 +109,6 @@ class ProfileScreen extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        // 1. TAMBAHKAN STATEFULBUILDER DI SINI
-        // 'setModalState' adalah kunci untuk me-refresh tampilan pop-up
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             return Padding(
@@ -138,13 +139,22 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // 2. Input Password Baru (Kirim state dan fungsi ubahnya)
+                  _buildPasswordInput(
+                    label: "Password Saat Ini",
+                    controller: currentPassController,
+                    isObscure: obscureCurrent,
+                    onToggle: () {
+                      setModalState(() {
+                        obscureNew = !obscureNew;
+                      });
+                    },
+                  ),
+
                   _buildPasswordInput(
                     label: "Password Baru",
                     controller: newPassController,
                     isObscure: obscureNew,
                     onToggle: () {
-                      // Gunakan setModalState, BUKAN setState biasa
                       setModalState(() {
                         obscureNew = !obscureNew;
                       });
@@ -152,7 +162,6 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 15),
 
-                  // 3. Input Konfirmasi Password
                   _buildPasswordInput(
                     label: "Konfirmasi Password",
                     controller: confirmPassController,
@@ -168,29 +177,38 @@ class ProfileScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     height: 50,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Password berhasil diubah!"),
-                          ),
+                    child: CustomButton(
+                      text: "Simpan",
+                      onPressed: () async {
+                        if (newPassController.text !=
+                            confirmPassController.text) {
+                          ToastHelper.showShortToast(
+                            "Konfirmasi password tidak cocok",
+                          );
+                          return;
+                        }
+
+                        final passwordError = Validators.validatePassword(
+                          newPassController.text,
                         );
+                        if (passwordError != null) {
+                          ToastHelper.showShortToast(passwordError);
+                          return;
+                        }
+
+                        await AuthProvider()
+                            .changePassword(
+                              currentPassword: currentPassController.text,
+                              newPassword: newPassController.text,
+                            )
+                            .then(
+                              (value) => {
+                                if (value)
+                                  if (context.mounted)
+                                    context.go(AppRoutes.splash),
+                              },
+                            );
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: brandColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        "Simpan",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
                     ),
                   ),
                 ],
@@ -202,13 +220,11 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // --- Helper Widget yang Diupdate ---
-  // Sekarang menerima parameter isObscure dan onToggle
   Widget _buildPasswordInput({
     required String label,
     required TextEditingController controller,
-    required bool isObscure, // Data: Apakah sedang tersembunyi?
-    required VoidCallback onToggle, // Aksi: Apa yang terjadi saat mata diklik?
+    required bool isObscure,
+    required VoidCallback onToggle,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -223,7 +239,7 @@ class ProfileScreen extends StatelessWidget {
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          obscureText: isObscure, // Gunakan variabel dynamic
+          obscureText: isObscure,
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
@@ -237,16 +253,14 @@ class ProfileScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Color(0xFFE55B5B)),
             ),
-            // Tombol Mata
             suffixIcon: IconButton(
               icon: Icon(
-                // Ganti icon berdasarkan status
                 isObscure
                     ? Icons.visibility_off_outlined
                     : Icons.visibility_outlined,
                 color: Colors.grey,
               ),
-              onPressed: onToggle, // Panggil fungsi toggle saat diklik
+              onPressed: onToggle,
             ),
           ),
         ),
@@ -254,66 +268,78 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader() {
-    return Row(
-      children: [
-        Container(
-          width: 70,
-          height: 70,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            image: DecorationImage(
-              // Placeholder image
-              image: NetworkImage('https://i.pravatar.cc/300'),
-              fit: BoxFit.cover,
-            ),
-          ),
-        ),
-        const SizedBox(width: 15),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildProfileHeader(BuildContext context) {
+    return FutureBuilder<Map<dynamic, dynamic>>(
+      future: AuthProvider().getUserData(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!snapshot.hasData || snapshot.data == null) {
+          return const Text(
+            "Gagal memuat data profil",
+            style: TextStyle(color: Colors.red),
+          );
+        }
+
+        final userData = snapshot.data!;
+
+        ImageProvider profileImage;
+        if (userData['profilePicture'] != null &&
+            userData['profilePicture'].toString().isNotEmpty) {
+          profileImage = NetworkImage(userData['profilePicture']);
+        } else {
+          profileImage = const AssetImage("assets/images/person.png");
+        }
+
+        return Row(
           children: [
-            const Text(
-              "Daffa",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                image: DecorationImage(image: profileImage, fit: BoxFit.cover),
+              ),
             ),
-            Text(
-              "daffaprawira@students.usu.ac.id",
-              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+            const SizedBox(width: 15),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  userData['nama'] ?? "User",
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  userData['email'] ?? "-",
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+              ],
             ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 }
 
-// 1. Data Class: Defines what a menu item looks like
 class MenuItemData {
   final IconData icon;
   final String text;
   final VoidCallback? onTap;
 
-  MenuItemData({
-    required this.icon,
-    required this.text,
-    required this.onTap, // Tambahan: parameter opsional
-  });
+  MenuItemData({required this.icon, required this.text, required this.onTap});
 }
 
-// 2. The Menu Section Widget
 class MenuSection extends StatelessWidget {
   final String title;
   final List<MenuItemData> items;
 
-  // final Color brandColor;
-
-  const MenuSection({
-    super.key,
-    required this.title,
-    required this.items,
-    // required this.brandColor,
-  });
+  const MenuSection({super.key, required this.title, required this.items});
 
   @override
   Widget build(BuildContext context) {
@@ -333,7 +359,7 @@ class MenuSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withAlpha(3),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -375,15 +401,11 @@ class MenuSection extends StatelessWidget {
                       horizontal: 16,
                       vertical: 0,
                     ),
-
-                    // --- BAGIAN INI YANG DIPERBAIKI ---
                     onTap: item.onTap,
-                    // ----------------------------------
                   ),
                   if (!isLast)
                     const Padding(
                       padding: EdgeInsets.only(left: 55, right: 16),
-                      // Saya ubah jadi 55 lagi biar rapi
                       child: Divider(height: 1, color: Colors.black12),
                     ),
                 ],

@@ -3,7 +3,6 @@ import 'package:eventure/widgets/app_scaffold.dart';
 import 'package:eventure/widgets/custom_button.dart';
 import 'package:eventure/widgets/custom_textfield.dart';
 import 'package:flutter/material.dart';
-
 import '../../widgets/event_card.dart';
 
 class DashboardScreen extends StatelessWidget {

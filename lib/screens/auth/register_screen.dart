@@ -1,11 +1,16 @@
+import 'dart:io';
 import 'package:eventure/navigation/app_router.dart';
+import 'package:eventure/providers/auth_provider.dart';
 import 'package:eventure/utils/exit_confirmation.dart';
+import 'package:eventure/utils/toast_helper.dart';
+import 'package:eventure/utils/validators.dart';
 import 'package:eventure/widgets/custom_button.dart';
 import 'package:eventure/widgets/custom_textfield.dart';
 import 'package:eventure/widgets/custom_file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:provider/provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -15,8 +20,57 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final TextEditingController namaController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
   String? selectedFileName;
   PlatformFile? selectedFile;
+
+  Future<void> _handleSignUp() async {
+    final String nama = namaController.text;
+    final String email = emailController.text;
+    final String password = passwordController.text;
+
+    final emailError = Validators.validateEmail(email);
+    if (emailError != null) {
+      ToastHelper.showShortToast(emailError);
+      return;
+    }
+
+    final passwordError = Validators.validatePassword(password);
+    if (passwordError != null) {
+      ToastHelper.showShortToast(passwordError);
+      return;
+    }
+
+    if (selectedFile == null) {
+      ToastHelper.showShortToast("Pilih file terlebih dahulu");
+      return;
+    }
+
+    if (selectedFile!.path == null) {
+      ToastHelper.showShortToast("Path file tidak tersedia");
+      return;
+    }
+
+    final File file = File(selectedFile!.path!);
+
+    final authProvider = context.read<AuthProvider>();
+    final success = await authProvider.signUp(
+      nama: nama,
+      email: email,
+      password: password,
+      file: file,
+    );
+
+    if (success) {
+      if (mounted) {
+        ToastHelper.showShortToast("Pendaftaran Berhasil!");
+        context.go(AppRoutes.home);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +113,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           SizedBox(height: screenHeight * 0.02),
 
                           CustomTextField(
+                            controller: namaController,
                             hintText: "Nama Lengkap",
                             icon: Icons.person,
                           ),
@@ -66,6 +121,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           SizedBox(height: screenHeight * 0.015),
 
                           CustomTextField(
+                            controller: emailController,
                             hintText: "Email",
                             icon: Icons.email,
                             keyboardType: TextInputType.emailAddress,
@@ -74,6 +130,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           SizedBox(height: screenHeight * 0.015),
 
                           CustomTextField(
+                            controller: passwordController,
                             hintText: "Password",
                             icon: Icons.password,
                             keyboardType: TextInputType.visiblePassword,
@@ -99,7 +156,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                           CustomButton(
                             text: "Daftar",
-                            onPressed: () => context.go(AppRoutes.home),
+                            onPressed: () => _handleSignUp(),
                           ),
 
                           SizedBox(height: screenHeight * 0.02),

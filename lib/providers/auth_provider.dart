@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import '../api/auth_service.dart';
 
@@ -22,6 +25,62 @@ class AuthProvider with ChangeNotifier {
     return (_authService.currentUser != null);
   }
 
+  Future<String> currentUser() async {
+    return (_authService.currentUser!.uid);
+  }
+
+  /// Attempts to change user data and manages loading state.
+  /// Returns true on success, false on failure.
+  // Future<bool> changeUserData({
+  //   required String nama,
+  //   required String email,
+  //   required String phone,
+  //   required String password,
+  //   required File file,
+  // }) async {
+  //   _setLoading(true);
+  //   try {
+  //     final uid = await currentUser();
+  //
+  //     var path = "";
+  //     await FirebaseStorage.instance
+  //         .ref("users")
+  //         .child(uid)
+  //         .putFile(file)
+  //         .then((value) async => path = await value.ref.getDownloadURL())
+  //         .whenComplete(() async {
+  //       await FirebaseDatabase.instance
+  //           .ref()
+  //           .child("users")
+  //           .child(uid)
+  //           .update({
+  //         "nama": nama,
+  //         "email": email,
+  //         "phone": phone,
+  //         "password": password,
+  //         "ktm": path,
+  //       });
+  //     });
+  //   } catch (e) {
+  //     _setLoading(false);
+  //     return false;
+  //   }
+  // }
+
+  /// Get user data from the database
+  Future<Map<dynamic, dynamic>> getUserData() async {
+    Map<dynamic, dynamic> userData = {};
+    await FirebaseDatabase.instance
+        .ref()
+        .child("users")
+        .child(await currentUser())
+        .once()
+        .then((value) {
+          userData = value.snapshot.value as Map<dynamic, dynamic>;
+        });
+    return userData;
+  }
+
   /// Attempts to sign in a user and manages the loading state.
   /// Returns true on success, false on failure.
   Future<bool> signIn({required String email, required String password}) async {
@@ -41,13 +100,29 @@ class AuthProvider with ChangeNotifier {
 
   /// Attempts to register a new user and manages the loading state.
   /// Returns true on success, false on failure.
-  Future<bool> signUp({required String email, required String password}) async {
+  Future<bool> signUp({
+    required String nama,
+    required String email,
+    required String password,
+    required File file,
+  }) async {
     _setLoading(true);
     try {
-      await _authService.signUpWithEmailAndPassword(
+      final uid = await _authService.signUpWithEmailAndPassword(
         email: email,
         password: password,
       );
+      var path = "";
+      await FirebaseStorage.instance
+          .ref("users")
+          .child(uid!)
+          .putFile(file)
+          .then((value) async => path = await value.ref.getDownloadURL())
+          .whenComplete(() async {
+            await FirebaseDatabase.instance.ref().child("users").child(uid).set(
+              {"nama": nama, "email": email, "password": password, "ktm": path},
+            );
+          });
       _setLoading(false);
       return true;
     } catch (e) {

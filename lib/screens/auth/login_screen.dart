@@ -2,10 +2,13 @@ import 'package:eventure/navigation/app_router.dart';
 import 'package:eventure/utils/exit_confirmation.dart';
 import 'package:eventure/widgets/custom_button.dart';
 import 'package:eventure/widgets/custom_textfield.dart';
-import 'package:eventure/widgets/custom_file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../utils/toast_helper.dart';
+import '../../utils/validators.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,8 +18,43 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
   String? selectedFileName;
   PlatformFile? selectedFile;
+
+  Future<void> _handleSignUp() async {
+    final String email = emailController.text;
+    final String password = passwordController.text;
+
+    final emailError = Validators.validateEmail(email);
+    if (emailError != null) {
+      ToastHelper.showShortToast(emailError);
+      return;
+    }
+
+    final passwordError = Validators.validatePassword(password);
+    if (passwordError != null) {
+      ToastHelper.showShortToast(passwordError);
+      return;
+    }
+
+    final success = await context.read<AuthProvider>().signIn(
+      email: email,
+      password: password,
+    );
+
+    if (success) {
+      if (mounted) {
+        Map<dynamic, dynamic> userData = await context
+            .read<AuthProvider>()
+            .getUserData();
+        ToastHelper.showShortToast("Selamat Datang, ${userData["nama"]}!");
+        if (mounted) context.go(AppRoutes.home);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         SizedBox(height: screenHeight * 0.02),
 
                         CustomTextField(
+                          controller: emailController,
                           hintText: "Email",
                           icon: Icons.email,
                           keyboardType: TextInputType.emailAddress,
@@ -66,6 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         SizedBox(height: screenHeight * 0.02),
 
                         CustomTextField(
+                          controller: passwordController,
                           hintText: "Password",
                           icon: Icons.password,
                           keyboardType: TextInputType.visiblePassword,
@@ -75,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         CustomButton(
                           text: "Masuk",
-                          onPressed: () => context.go(AppRoutes.home),
+                          onPressed: () => _handleSignUp(),
                         ),
 
                         SizedBox(height: screenHeight * 0.02),
