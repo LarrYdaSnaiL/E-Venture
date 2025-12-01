@@ -6,7 +6,10 @@ import 'package:eventure/widgets/app_scaffold.dart';
 import 'package:eventure/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
 import '../../widgets/app_header.dart';
+import '../../models/user_model.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -20,17 +23,14 @@ class ProfileScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const AppHeader(),
-
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   children: [
                     _buildProfileHeader(context),
-
                     const SizedBox(height: 20),
                     const Divider(thickness: 1, color: Colors.black12),
                     const SizedBox(height: 15),
-
                     MenuSection(
                       title: "Profil",
                       items: [
@@ -42,7 +42,9 @@ class ProfileScreen extends StatelessWidget {
                         MenuItemData(
                           icon: Icons.notifications_none,
                           text: "Notifikasi",
-                          onTap: () => context.go('/editprofil'),
+                          onTap: () => {
+                            ToastHelper.showShortToast("Under Construction!"),
+                          },
                         ),
                         MenuItemData(
                           icon: Icons.vpn_key_outlined,
@@ -58,7 +60,9 @@ class ProfileScreen extends StatelessWidget {
                         MenuItemData(
                           icon: Icons.support_agent,
                           text: "Pusat Bantuan",
-                          onTap: () => context.go('/editprofil'),
+                          onTap: () => {
+                            ToastHelper.showShortToast("Under Construction!"),
+                          },
                         ),
                       ],
                     ),
@@ -74,12 +78,13 @@ class ProfileScreen extends StatelessWidget {
                         MenuItemData(
                           icon: Icons.logout,
                           text: "Keluar",
-                          onTap: () => AuthProvider().signOut().then(
-                            (value) => {
-                              ToastHelper.showShortToast("Berhasil Keluar"),
-                              if (context.mounted) context.go(AppRoutes.login),
-                            },
-                          ),
+                          onTap: () async {
+                            await context.read<AuthProvider>().signOut();
+                            ToastHelper.showShortToast("Berhasil Keluar");
+                            if (context.mounted) {
+                              context.go(AppRoutes.login);
+                            }
+                          },
                         ),
                       ],
                     ),
@@ -138,18 +143,17 @@ class ProfileScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 20),
-
                   _buildPasswordInput(
                     label: "Password Saat Ini",
                     controller: currentPassController,
                     isObscure: obscureCurrent,
                     onToggle: () {
                       setModalState(() {
-                        obscureNew = !obscureNew;
+                        obscureCurrent = !obscureCurrent;
                       });
                     },
                   ),
-
+                  const SizedBox(height: 15),
                   _buildPasswordInput(
                     label: "Password Baru",
                     controller: newPassController,
@@ -161,7 +165,6 @@ class ProfileScreen extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 15),
-
                   _buildPasswordInput(
                     label: "Konfirmasi Password",
                     controller: confirmPassController,
@@ -173,7 +176,6 @@ class ProfileScreen extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 25),
-
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -196,18 +198,24 @@ class ProfileScreen extends StatelessWidget {
                           return;
                         }
 
-                        await AuthProvider()
-                            .changePassword(
-                              currentPassword: currentPassController.text,
-                              newPassword: newPassController.text,
-                            )
-                            .then(
-                              (value) => {
-                                if (value)
-                                  if (context.mounted)
-                                    context.go(AppRoutes.splash),
-                              },
-                            );
+                        final auth = context.read<AuthProvider>();
+                        final success = await auth.changePassword(
+                          currentPassword: currentPassController.text,
+                          newPassword: newPassController.text,
+                        );
+
+                        if (success) {
+                          ToastHelper.showShortToast(
+                            "Password berhasil diubah. Silakan login kembali.",
+                          );
+                          if (context.mounted) {
+                            context.go(AppRoutes.splash);
+                          }
+                        } else {
+                          ToastHelper.showShortToast(
+                            "Gagal mengubah password. Periksa password saat ini.",
+                          );
+                        }
                       },
                     ),
                   ),
@@ -269,8 +277,15 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildProfileHeader(BuildContext context) {
-    return FutureBuilder<Map<dynamic, dynamic>>(
-      future: AuthProvider().getUserData(),
+    final auth = context.watch<AuthProvider>();
+    final cachedUser = auth.currentUserData;
+
+    if (cachedUser != null) {
+      return _buildHeaderFromUser(cachedUser);
+    }
+
+    return FutureBuilder<UserModel?>(
+      future: context.read<AuthProvider>().getUserData(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -283,46 +298,46 @@ class ProfileScreen extends StatelessWidget {
           );
         }
 
-        final userData = snapshot.data!;
+        final user = snapshot.data!;
+        return _buildHeaderFromUser(user);
+      },
+    );
+  }
 
-        ImageProvider profileImage;
-        if (userData['profilePicture'] != null &&
-            userData['profilePicture'].toString().isNotEmpty) {
-          profileImage = NetworkImage(userData['profilePicture']);
-        } else {
-          profileImage = const AssetImage("assets/images/person.png");
-        }
+  Widget _buildHeaderFromUser(UserModel user) {
+    ImageProvider profileImage;
 
-        return Row(
+    if (user.profilePicture.isNotEmpty) {
+      profileImage = NetworkImage(user.profilePicture);
+    } else {
+      profileImage = const AssetImage("assets/images/person.png");
+    }
+
+    return Row(
+      children: [
+        Container(
+          width: 70,
+          height: 70,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            image: DecorationImage(image: profileImage, fit: BoxFit.cover),
+          ),
+        ),
+        const SizedBox(width: 15),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                image: DecorationImage(image: profileImage, fit: BoxFit.cover),
-              ),
+            Text(
+              user.name.isNotEmpty ? user.name : "User",
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(width: 15),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  userData['nama'] ?? "User",
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  userData['email'] ?? "-",
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                ),
-              ],
+            Text(
+              user.email.isNotEmpty ? user.email : "-",
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),
           ],
-        );
-      },
+        ),
+      ],
     );
   }
 }

@@ -13,6 +13,39 @@ class DashboardScreen extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
+    // dummy data dulu, nanti bisa diganti list dari Firebase
+    final events = [
+      {
+        'image': 'assets/images/placeholder_eventcard.jpg',
+        'name':
+            'Penerapan Sistem Manajemen Mutu ISO 9001 yang Efektif untuk Organisasi',
+        'type': 'Technology',
+        'price': 'Gratis',
+        'tags': ['SQA', 'Digital', 'Tech'],
+      },
+      {
+        'image': 'assets/images/placeholder_eventcard.jpg',
+        'name': 'Workshop UI/UX Design untuk Aplikasi Mobile',
+        'type': 'Design',
+        'price': 'Rp 25.000',
+        'tags': ['UI/UX', 'Mobile', 'Design'],
+      },
+      {
+        'image': 'assets/images/placeholder_eventcard.jpg',
+        'name': 'Seminar Cloud Computing untuk Mahasiswa',
+        'type': 'Technology',
+        'price': 'Gratis',
+        'tags': ['Cloud', 'AWS', 'GCP'],
+      },
+      {
+        'image': 'assets/images/placeholder_eventcard.jpg',
+        'name': 'Pelatihan Public Speaking untuk Pemula',
+        'type': 'Softskill',
+        'price': 'Rp 10.000',
+        'tags': ['Softskill', 'Speaking'],
+      },
+    ];
+
     return AppScaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -26,9 +59,10 @@ class DashboardScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Search + button
                     Row(
                       children: [
-                        Expanded(
+                        const Expanded(
                           flex: 3,
                           child: CustomTextField(
                             hintText: "Cari Event...",
@@ -38,44 +72,39 @@ class DashboardScreen extends StatelessWidget {
                         const SizedBox(width: 10),
                         Expanded(
                           flex: 1,
-                          child: CustomButton(
-                            text: "Cari",
-                            onPressed: () => {},
-                          ),
+                          child: CustomButton(text: "Cari", onPressed: () {}),
                         ),
                       ],
                     ),
 
-                    SizedBox(height: 16),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        EventCard(
-                          imageUrl: 'assets/images/placeholder_eventcard.jpg',
-                          eventName:
-                              'Penerapan Sistem Manajemen Mutu ISO 9001 yang Efektif untuk Organisasi',
-                          eventType: 'Technology',
-                          price: 'Gratis',
-                          tags: ['SQA', 'Digital', 'Tech'],
+                    SizedBox(height: screenHeight * 0.02),
+
+                    // GRID 2 KOLOM
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        // atur proporsi tinggi:lebar card
+                        childAspectRatio: 0.72,
+                      ),
+                      itemCount: events.length,
+                      itemBuilder: (context, index) {
+                        final e = events[index];
+                        return EventCard(
+                          imageUrl: e['image'] as String,
+                          eventName: e['name'] as String,
+                          eventType: e['type'] as String,
+                          price: e['price'] as String,
+                          tags: (e['tags'] as List<String>),
                           showButton: true,
-                          onButtonPressed: () => {
-                            // TODO: Implement button action
+                          onButtonPressed: () {
+
                           },
-                        ),
-                        EventCard(
-                          imageUrl: 'assets/images/placeholder_eventcard.jpg',
-                          eventName:
-                              'Penerapan Sistem Manajemen Mutu ISO 9001 yang Efektif untuk Organisasi',
-                          eventType: 'Technology',
-                          price: 'Gratis',
-                          tags: ['SQA', 'Digital', 'Tech'],
-                          showButton: true,
-                          onButtonPressed: () => {
-                            // TODO: Implement button action
-                          },
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ],
                 ),

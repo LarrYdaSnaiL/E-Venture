@@ -99,7 +99,7 @@ class BottomNavigationShell extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: Icon(
           isActive ? activeIcon : icon,
-          size: 32,
+          size: 26,
           color: isActive ? activeColor : inactiveColor,
         ),
       ),

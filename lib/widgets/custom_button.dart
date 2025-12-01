@@ -25,18 +25,25 @@ class CustomButton extends StatelessWidget {
             ? const Color(0xFFD64F5C)
             : const Color(0xFFFDE4E7),
         disabledBackgroundColor: const Color(0xFFFDE4E7),
+
+        padding: EdgeInsets.symmetric(
+          horizontal: size.width * 0.04,
+          vertical: size.height * 0.012,
+        ),
+
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         elevation: 0,
-        padding: EdgeInsets.symmetric(
-          horizontal: size.width * 0.06,
-          vertical: size.height * 0.015,
-        ),
       ),
       child: Text(
         text,
         style: TextStyle(
           fontFamily: 'Poppins',
-          fontSize: isLandscape ? size.height * 0.02 : size.width * 0.04,
+
+          // 🔥 FONT SIZE lebih kecil
+          fontSize: isLandscape
+              ? size.height * 0.018
+              : size.width * 0.035, // sebelumnya 0.04
+
           fontWeight: FontWeight.w600,
           color: isEnabled ? Colors.white : const Color(0xFFD64F5C),
         ),

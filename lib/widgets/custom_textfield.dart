@@ -19,18 +19,18 @@ class CustomTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final dynamicHeight = (size.height * 0.06).clamp(45.0, 60.0);
 
-    final dynamicFontSize = (size.width * 0.04).clamp(14.0, 18.0);
-    final dynamicIconSize = (size.width * 0.06).clamp(20.0, 24.0);
+    final dynamicHeight = (size.height * 0.055).clamp(40.0, 52.0);
+    final dynamicFontSize = (size.width * 0.035).clamp(12.0, 16.0);
+    final dynamicIconSize = (size.width * 0.05).clamp(18.0, 22.0);
 
     return Container(
       height: dynamicHeight,
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD64F5C), width: 1.5),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFD64F5C), width: 1.3),
       ),
       child: TextField(
         controller: controller,
@@ -56,8 +56,11 @@ class CustomTextField extends StatelessWidget {
             color: const Color(0xFFD64F5C),
             size: dynamicIconSize,
           ),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: size.width * 0.03,
+            vertical: size.height * 0.010,
+          ),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: size.width * 0.05),
           isDense: true,
         ),
       ),

@@ -1,12 +1,12 @@
 import 'dart:io';
-
 import 'package:eventure/navigation/app_router.dart';
 import 'package:eventure/providers/auth_provider.dart';
+import 'package:eventure/utils/toast_helper.dart';
 import 'package:eventure/widgets/custom_button.dart';
 import 'package:eventure/widgets/custom_textfield.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -24,9 +24,41 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
 
+  bool _isLoadingUser = true;
+
+  File? _profileImageFile;
+  File? _ktmFile;
+
+  String? _initialProfileUrl;
+  String? _ktmFileLabel;
+
   @override
   void initState() {
     super.initState();
+    _nameController = TextEditingController();
+    _emailController = TextEditingController();
+    _phoneController = TextEditingController();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final auth = context.read<AuthProvider>();
+    final user = await auth.getUserData();
+
+    if (user != null) {
+      setState(() {
+        _nameController.text = user.name;
+        _emailController.text = user.email;
+        _phoneController.text = user.phone;
+        _initialProfileUrl = user.profilePicture;
+        if (user.ktm.isNotEmpty) {
+          _ktmFileLabel = "KTM sudah terunggah";
+        }
+        _isLoadingUser = false;
+      });
+    } else {
+      setState(() => _isLoadingUser = false);
+    }
   }
 
   @override
@@ -36,26 +68,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _phoneController.dispose();
     super.dispose();
   }
-
-  // String? _profileImageUrl;
-  //
-  // Future<void> _pickImage() async {
-  //   final picker = ImagePicker();
-  //   final picked = await picker.pickImage(source: ImageSource.gallery);
-  //
-  //   if (picked == null) return;
-  //
-  //   final file = File(picked.path);
-  //
-  //   final auth = context.read<AuthProvider>();
-  //   final newUrl = await auth.changeUserData(file: file);
-  //
-  //   if (newUrl != null) {
-  //     setState(() {
-  //       _profileImageUrl = newUrl;
-  //     });
-  //   }
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -74,125 +86,276 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            _buildProfileImagePicker(),
-
-            const SizedBox(height: 35),
-
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(5),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+      body: _isLoadingUser
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
+                  _buildProfileImagePicker(),
+                  const SizedBox(height: 35),
+                  _buildForm(),
+                  const SizedBox(height: 40),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: CustomButton(text: "Simpan", onPressed: _handleSave),
                   ),
                 ],
               ),
-              child: Column(
-                children: [
-                  CustomTextField(hintText: "Nama Lengkap", icon: Icons.person),
-                  const SizedBox(height: 15),
-                  CustomTextField(hintText: "Email", icon: Icons.email),
-                  const SizedBox(height: 15),
-                  CustomTextField(hintText: "Nomor Telepon", icon: Icons.phone),
-                ],
-              ),
             ),
+    );
+  }
 
-            const SizedBox(height: 40),
-
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: CustomButton(text: "Simpan", onPressed: () {}),
-            ),
-          ],
-        ),
+  Widget _buildForm() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(5),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          CustomTextField(
+            controller: _nameController,
+            hintText: "Nama Lengkap",
+            icon: Icons.person,
+          ),
+          const SizedBox(height: 15),
+          CustomTextField(
+            controller: _emailController,
+            hintText: "Email",
+            icon: Icons.email,
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: 15),
+          CustomTextField(
+            controller: _phoneController,
+            hintText: "Nomor Telepon",
+            icon: Icons.phone,
+            keyboardType: TextInputType.phone,
+          ),
+          const SizedBox(height: 20),
+          _buildKtmPicker(),
+        ],
       ),
     );
   }
 
   Widget _buildProfileImagePicker() {
-    return FutureBuilder<Map<dynamic, dynamic>>(
-      future: AuthProvider().getUserData(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    ImageProvider profileImage;
 
-        if (!snapshot.hasData || snapshot.data == null) {
-          return const Text(
-            "Gagal memuat data profil",
-            style: TextStyle(color: Colors.red),
-          );
-        }
+    if (_profileImageFile != null) {
+      profileImage = FileImage(_profileImageFile!);
+    } else if (_initialProfileUrl != null && _initialProfileUrl!.isNotEmpty) {
+      profileImage = NetworkImage(_initialProfileUrl!);
+    } else {
+      profileImage = const AssetImage("assets/images/person.png");
+    }
 
-        final userData = snapshot.data!;
-
-        ImageProvider profileImage;
-        if (userData['profilePicture'] != null &&
-            userData['profilePicture'].toString().isNotEmpty) {
-          profileImage = NetworkImage(userData['profilePicture']);
-        } else {
-          profileImage = AssetImage("assets/images/person.png");
-        }
-
-        return Center(
-          child: Stack(
-            children: [
-              Container(
-                width: 110,
-                height: 110,
+    return Center(
+      child: Stack(
+        children: [
+          Container(
+            width: 110,
+            height: 110,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 3),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 10),
+              ],
+              image: DecorationImage(image: profileImage, fit: BoxFit.cover),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: InkWell(
+              onTap: _pickProfileImage,
+              child: Container(
+                height: 36,
+                width: 36,
                 decoration: BoxDecoration(
+                  color: _brandColor,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(10),
-                      blurRadius: 10,
-                    ),
-                  ],
-                  image: DecorationImage(
-                    image: profileImage,
-                    fit: BoxFit.cover,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: const Icon(
+                  Icons.camera_alt_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickProfileImage() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'gif'],
+      allowMultiple: false,
+    );
+
+    if (result != null && result.files.isNotEmpty) {
+      final picked = result.files.first;
+      final fileSizeInMB = picked.size / (1024 * 1024);
+
+      if (fileSizeInMB > 2) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ukuran file melebihi batas maksimal 2 MB'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      if (picked.path != null) {
+        setState(() => _profileImageFile = File(picked.path!));
+      }
+    }
+  }
+
+  Widget _buildKtmPicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            "Kartu Tanda Mahasiswa (KTM)",
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Color(0xFFD64F5C), width: 1.5),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              ElevatedButton(
+                onPressed: _pickKtmFile,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD64F5C),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text(
+                  'Pilih KTM',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
                   ),
                 ),
               ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: InkWell(
-                  onTap: () {
-                    // TODO: Pokoknya nanti _imagePicker itu disini
-                  },
-                  child: Container(
-                    height: 36,
-                    width: 36,
-                    decoration: BoxDecoration(
-                      color: _brandColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt_rounded,
-                      color: Colors.white,
-                      size: 18,
-                    ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  _ktmFileLabel ?? 'Belum ada file dipilih',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: _ktmFileLabel != null
+                        ? Colors.black
+                        : const Color(0xFFCCCCCC),
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-        );
-      },
+        ),
+      ],
     );
+  }
+
+  Future<void> _pickKtmFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      allowMultiple: false,
+    );
+
+    if (result != null && result.files.isNotEmpty) {
+      final picked = result.files.first;
+      final fileSizeInMB = picked.size / (1024 * 1024);
+
+      if (fileSizeInMB > 2) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ukuran file melebihi batas maksimal 2 MB'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      if (picked.path != null) {
+        setState(() {
+          _ktmFile = File(picked.path!);
+          _ktmFileLabel = picked.name;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleSave() async {
+    final auth = context.read<AuthProvider>();
+
+    final success = await auth.changeUserData(
+      name: _nameController.text.trim().isEmpty
+          ? null
+          : _nameController.text.trim(),
+      email: _emailController.text.trim().isEmpty
+          ? null
+          : _emailController.text.trim(),
+      phone: _phoneController.text.trim().isEmpty
+          ? null
+          : _phoneController.text.trim(),
+      newKtm: _ktmFile,
+      newProfilePicture: _profileImageFile,
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      ToastHelper.showShortToast("Profil berhasil diperbarui");
+      context.go(AppRoutes.home);
+    } else {
+      ToastHelper.showShortToast("Gagal memperbarui profil");
+    }
   }
 }

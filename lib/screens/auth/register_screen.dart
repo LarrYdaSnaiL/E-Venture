@@ -27,10 +27,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? selectedFileName;
   PlatformFile? selectedFile;
 
+  bool _isLoading = false;
+
   Future<void> _handleSignUp() async {
-    final String nama = namaController.text;
-    final String email = emailController.text;
-    final String password = passwordController.text;
+    if (_isLoading) return;
+
+    final String nama = namaController.text.trim();
+    final String email = emailController.text.trim();
+    final String password = passwordController.text.trim();
+
+    if (nama.isEmpty) {
+      ToastHelper.showShortToast("Nama tidak boleh kosong");
+      return;
+    }
 
     final emailError = Validators.validateEmail(email);
     if (emailError != null) {
@@ -56,20 +65,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     final File file = File(selectedFile!.path!);
 
-    final authProvider = context.read<AuthProvider>();
-    final success = await authProvider.signUp(
-      nama: nama,
-      email: email,
-      password: password,
-      file: file,
-    );
+    setState(() {
+      _isLoading = true;
+    });
 
-    if (success) {
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final success = await authProvider.signUp(
+        name: nama,
+        email: email,
+        password: password,
+        file: file,
+      );
+
+      if (success) {
+        if (mounted) {
+          ToastHelper.showShortToast("Pendaftaran Berhasil!");
+          context.go(AppRoutes.home);
+        }
+      } else {
+        ToastHelper.showShortToast("Pendaftaran gagal, coba lagi");
+      }
+    } finally {
       if (mounted) {
-        ToastHelper.showShortToast("Pendaftaran Berhasil!");
-        context.go(AppRoutes.home);
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
+  }
+
+  @override
+  void dispose() {
+    namaController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -80,55 +111,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return ExitConfirmation(
       child: Center(
         child: Scaffold(
-          backgroundColor: Color(0xFFF78DA7),
+          backgroundColor: const Color(0xFFF78DA7),
           resizeToAvoidBottomInset: false,
           body: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SizedBox(height: screenHeight * 0.2),
-
               Image.asset(
                 "assets/logo/inappicon.png",
                 width: screenWidth * 0.3,
               ),
-
               SizedBox(height: screenHeight * 0.03),
-
               Expanded(
                 child: Card(
                   elevation: 5,
                   margin: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(
+                  shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(15),
                       topRight: Radius.circular(15),
                     ),
                   ),
-                  color: Color(0xFFFDF5F7),
+                  color: const Color(0xFFFDF5F7),
                   child: Padding(
-                    padding: EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(16.0),
                     child: SingleChildScrollView(
                       child: Column(
                         children: [
                           SizedBox(height: screenHeight * 0.02),
-
                           CustomTextField(
                             controller: namaController,
                             hintText: "Nama Lengkap",
                             icon: Icons.person,
                           ),
-
                           SizedBox(height: screenHeight * 0.015),
-
                           CustomTextField(
                             controller: emailController,
                             hintText: "Email",
                             icon: Icons.email,
                             keyboardType: TextInputType.emailAddress,
                           ),
-
                           SizedBox(height: screenHeight * 0.015),
-
                           CustomTextField(
                             controller: passwordController,
                             hintText: "Password",
@@ -136,9 +159,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             keyboardType: TextInputType.visiblePassword,
                             obscureText: true,
                           ),
-
                           SizedBox(height: screenHeight * 0.015),
-
                           CustomFilePicker(
                             label: "Kartu Tanda Mahasiswa (KTM)",
                             fileName: selectedFileName,
@@ -151,31 +172,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               }
                             },
                           ),
-
                           SizedBox(height: screenHeight * 0.025),
 
                           CustomButton(
-                            text: "Daftar",
-                            onPressed: () => _handleSignUp(),
+                            text: _isLoading ? "Memproses..." : "Daftar",
+                            isEnabled: !_isLoading,
+                            onPressed: _handleSignUp,
                           ),
 
-                          SizedBox(height: screenHeight * 0.02),
+                          if (_isLoading) ...[
+                            const SizedBox(height: 12),
+                            const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Color(0xFFD64F5C),
+                                ),
+                              ),
+                            ),
+                          ],
 
+                          SizedBox(height: screenHeight * 0.02),
                           Row(
                             children: [
-                              Expanded(
+                              const Expanded(
                                 child: Divider(
                                   color: Color(0xFF8A8A8A),
                                   thickness: 0.5,
                                 ),
                               ),
-
                               Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                ),
                                 child: Text(
                                   "Atau",
                                   style: TextStyle(
-                                    color: Color(0xFF8A8A8A),
+                                    color: const Color(0xFF8A8A8A),
                                     fontSize: (screenWidth * 0.04).clamp(
                                       14.0,
                                       18.0,
@@ -185,8 +220,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                 ),
                               ),
-
-                              Expanded(
+                              const Expanded(
                                 child: Divider(
                                   color: Color(0xFF8A8A8A),
                                   thickness: 0.5,
@@ -194,9 +228,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ],
                           ),
-
                           SizedBox(height: screenHeight * 0.02),
-
                           Card(
                             elevation: 5,
                             shape: RoundedRectangleBorder(
@@ -204,23 +236,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             color: Colors.white,
                             child: Padding(
-                              padding: EdgeInsets.all(8.0),
+                              padding: const EdgeInsets.all(8.0),
                               child: Image.asset(
                                 "assets/images/google.png",
                                 width: screenWidth * 0.1,
                               ),
                             ),
                           ),
-
                           SizedBox(height: screenHeight * 0.02),
-
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
                                 "Sudah punya akun?",
                                 style: TextStyle(
-                                  color: Color(0xFF8A8A8A),
+                                  color: const Color(0xFF8A8A8A),
                                   fontSize: (screenWidth * 0.04).clamp(
                                     14.0,
                                     18.0,
@@ -230,11 +260,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               ),
                               TextButton(
-                                onPressed: () => context.go(AppRoutes.login),
+                                onPressed: _isLoading
+                                    ? null
+                                    : () => context.go(AppRoutes.login),
                                 child: Text(
                                   "Masuk",
                                   style: TextStyle(
-                                    color: Color(0xFFD64F5C),
+                                    color: const Color(0xFFD64F5C),
                                     fontSize: (screenWidth * 0.04).clamp(
                                       14.0,
                                       18.0,
