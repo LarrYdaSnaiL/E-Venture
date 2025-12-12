@@ -10,7 +10,6 @@ class DatabaseService {
     try {
       await _db.ref('users/${user.uid}').set(user.toJson());
     } catch (e) {
-      print('Error saving user data: $e');
       rethrow;
     }
   }
@@ -35,7 +34,6 @@ class DatabaseService {
       event.id = newEventRef.key;
       await newEventRef.set(event.toJson());
     } catch (e) {
-      print('Error creating event: $e');
       rethrow;
     }
   }
@@ -44,9 +42,13 @@ class DatabaseService {
     return _db.ref('events').onValue;
   }
 
+  Stream<DatabaseEvent> getEventStream(String eventId) {
+    return _db.ref('events/$eventId').onValue;
+  }
+
   Future<void> registerForEvent(String eventId, String userId) async {
     try {
-      final attendanceRef = _db.ref('attendance/$eventId/$userId');
+      final attendanceRef = _db.ref('events/$eventId/rsvps/$userId');
       final newAttendance = AttendanceModel(
         userId: userId,
         eventId: eventId,
@@ -54,20 +56,40 @@ class DatabaseService {
       );
       await attendanceRef.set(newAttendance.toJson());
     } catch (e) {
-      print('Error registering for event: $e');
+      rethrow;
+    }
+  }
+
+  Future<bool> checkRegistered(String eventId, String userId) async {
+    try {
+      final attendanceRef = _db.ref('events/$eventId/rsvps/$userId');
+      final snapshot = await attendanceRef.get();
+
+      return snapshot.exists ? true : false;
+    } catch (e) {
       rethrow;
     }
   }
 
   Future<void> markAttendance(String eventId, String userId) async {
     try {
-      final attendanceRef = _db.ref('attendance/$eventId/$userId');
+      final attendanceRef = _db.ref('events/$eventId/rsvps/$userId');
       await attendanceRef.update({
         'attended': true,
         'attendedAt': DateTime.now().toIso8601String(),
       });
     } catch (e) {
-      print('Error marking attendance: $e');
+      rethrow;
+    }
+  }
+
+  Future<bool> checkAttended(String eventId, String userId) async {
+    try {
+      final attendanceRef = _db.ref('events/$eventId/rsvps/$userId');
+      final snapshot = await attendanceRef.get();
+
+      return snapshot.child("attended").exists ? true : false;
+    } catch (e) {
       rethrow;
     }
   }

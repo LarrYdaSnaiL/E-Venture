@@ -1,6 +1,4 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:path/path.dart';
-import '../navigation/app_router.dart';
 import '../utils/toast_helper.dart';
 
 /// A service class that wraps Firebase Authentication logic.

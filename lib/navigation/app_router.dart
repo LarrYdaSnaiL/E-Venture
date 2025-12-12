@@ -1,10 +1,12 @@
 import 'package:eventure/screens/auth/register_screen.dart';
+import 'package:eventure/screens/event/event_details_screen.dart';
 import 'package:eventure/utils/exit_confirmation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/splash_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
+import '../screens/event/create_event_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/profile/about_app_screen.dart';
 import '../screens/profile/edit_profile_screen.dart';
@@ -20,6 +22,8 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String editProfile = '/editProfile';
   static const String aboutApp = '/about';
+  static const String createEvent = '/createEvent';
+  static const String eventDetail = '/eventDetail/:eventId';
 }
 
 GoRouter createRouter() {
@@ -87,11 +91,25 @@ GoRouter createRouter() {
         builder: (context, state) => const EditProfileScreen(),
         name: "editProfile",
       ),
-
       GoRoute(
         path: '/about',
         builder: (context, state) => const AboutAppScreen(),
       ),
+      GoRoute(
+        path: '/createEvent',
+        builder: (context, state) => const CreateEventScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.eventDetail,
+        builder: (context, state) {
+          final eventId = state.pathParameters['eventId']!;
+
+          return EventDetailScreen(
+            eventId: eventId,
+          );
+        },
+      ),
+
     ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(
