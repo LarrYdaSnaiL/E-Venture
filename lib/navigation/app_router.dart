@@ -1,5 +1,7 @@
 import 'package:eventure/screens/auth/register_screen.dart';
+import 'package:eventure/screens/event/edit_event_screen.dart';
 import 'package:eventure/screens/event/event_details_screen.dart';
+import 'package:eventure/screens/qr/qr_scanner_screen.dart';
 import 'package:eventure/utils/exit_confirmation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +9,7 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/splash_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/event/create_event_screen.dart';
+import '../screens/event/event_dashboard_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/profile/about_app_screen.dart';
 import '../screens/profile/edit_profile_screen.dart';
@@ -23,7 +26,10 @@ class AppRoutes {
   static const String editProfile = '/editProfile';
   static const String aboutApp = '/about';
   static const String createEvent = '/createEvent';
-  static const String eventDetail = '/eventDetail/:eventId';
+  static const String eventDetail = '/event/:eventId/details';
+  static const String eventDashboard = '/event/:eventId/dashboard';
+  static const String scanner = '/event/:eventId/scanner';
+  static const String editEvent = '/event/:eventId/edit';
 }
 
 GoRouter createRouter() {
@@ -104,12 +110,31 @@ GoRouter createRouter() {
         builder: (context, state) {
           final eventId = state.pathParameters['eventId']!;
 
-          return EventDetailScreen(
-            eventId: eventId,
-          );
+          return EventDetailScreen(eventId: eventId);
         },
       ),
+      GoRoute(
+        path: AppRoutes.eventDashboard,
+        builder: (context, state) {
+          final eventId = state.pathParameters['eventId']!;
 
+          return EventDashboardScreen(eventId: eventId);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.scanner,
+        builder: (context, state) {
+          final eventId = (state.pathParameters['eventId'] ?? '').trim();
+          return ScanQrScreen(eventId: eventId);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.editEvent,
+        builder: (context, state) {
+          final eventId = (state.pathParameters['eventId'] ?? '').trim();
+          return EditEventScreen(eventId: eventId);
+        },
+      ),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(

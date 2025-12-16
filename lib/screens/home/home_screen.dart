@@ -8,12 +8,54 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:go_router/go_router.dart';
 import '../../widgets/event_card.dart';
-import '../event/create_event_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  Color? get primaryColor => const Color(0xFFD64A53);
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final Color primaryColor = const Color(0xFFD64A53);
+  final TextEditingController _searchC = TextEditingController();
+
+  List<Map<dynamic, dynamic>>? _filteredEvents;
+  bool _isSearching = false;
+
+  @override
+  void dispose() {
+    _searchC.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onSearchPressed() async {
+    final q = _searchC.text.trim();
+
+    if (q.isEmpty) {
+      setState(() => _filteredEvents = null);
+      return;
+    }
+
+    setState(() => _isSearching = true);
+
+    try {
+      final results = await DatabaseService().cariEvent(q);
+      if (!mounted) return;
+
+      setState(() {
+        _filteredEvents = results.map((e) => e.toJson()).toList();
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Gagal mencari event')));
+    } finally {
+      if (!mounted) return;
+      setState(() => _isSearching = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,14 +70,14 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const AppHeader(),
-
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 5, 20, 10),
                   child: Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         flex: 3,
                         child: CustomTextField(
+                          controller: _searchC,
                           hintText: "Cari Event...",
                           icon: Icons.search,
                         ),
@@ -43,67 +85,84 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         flex: 1,
-                        child: CustomButton(text: "Cari", onPressed: () => {}),
+                        child: CustomButton(
+                          text: _isSearching ? "..." : "Cari",
+                          onPressed: _isSearching ? null : _onSearchPressed,
+                        ),
                       ),
                     ],
                   ),
                 ),
-
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.only(
-                      bottom: 80,
-                      left: 20,
-                      right: 20,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 6),
+                  child: StreamBuilder<DatabaseEvent>(
+                    stream: DatabaseService().getAllEventsStream(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-                        StreamBuilder<DatabaseEvent>(
-                          stream: DatabaseService().getAllEventsStream(),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.only(top: 40),
-                                  child: CircularProgressIndicator(),
-                                ),
-                              );
-                            }
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Text(
+                              "Terjadi kesalahan saat memuat event.",
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: Colors.red),
+                            ),
+                          ),
+                        );
+                      }
 
-                            if (snapshot.hasError) {
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 20),
-                                child: Text(
-                                  "Terjadi kesalahan saat memuat event.",
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(color: Colors.red),
-                                ),
-                              );
-                            }
+                      final data = snapshot.data?.snapshot.value;
+                      if (data == null && _filteredEvents == null) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            child: Text(
+                              "Belum ada event tersedia",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
 
-                            final data = snapshot.data?.snapshot.value;
+                      final List events =
+                          _filteredEvents ??
+                          (data is Map ? (data).values.toList() : <dynamic>[]);
 
-                            if (data == null) {
-                              return const Center(
-                                child: Text(
-                                  "Belum ada event tersedia",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              );
-                            }
+                      if (events.isEmpty) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            child: Text(
+                              "Event tidak ditemukan",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
 
-                            final Map<dynamic, dynamic> raw =
-                                data as Map<dynamic, dynamic>;
-                            final events = raw.values.toList();
-
-                            return Wrap(
+                      return SingleChildScrollView(
+                        padding: const EdgeInsets.only(
+                          bottom: 80,
+                          left: 20,
+                          right: 20,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 6),
+                            Wrap(
                               spacing: 12,
                               runSpacing: 12,
                               children: [
@@ -128,22 +187,21 @@ class HomeScreen extends StatelessWidget {
                                       onCardPressed: () => context.go(
                                         AppRoutes.eventDetail.replaceFirst(
                                           ':eventId',
-                                          e['id'] as String,
+                                          (e['id'] ?? '') as String,
                                         ),
                                       ),
                                     ),
                                   ),
                               ],
-                            );
-                          },
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ),
               ],
             ),
-
             Positioned(
               bottom: 20,
               right: 20,

@@ -61,4 +61,13 @@ class StorageService {
       return null;
     }
   }
+
+  Future<void> deleteDocument(String url) async {
+    try {
+      final ref = _storage.refFromURL(url);
+      await ref.delete();
+    } on FirebaseException catch (e) {
+      print('Error deleting document: $e');
+    }
+  }
 }

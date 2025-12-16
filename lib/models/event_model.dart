@@ -13,13 +13,11 @@ class EventModel {
   final String? bannerUrl;
   final String? photoUrl;
   final String? skUrl;
-
-  // field baru
-  final String eventType; // Workshop / Seminar / dst / custom
-  final String eventDay; // Senin, Selasa, ...
-  final String tags; // string bebas, misal "IT, Gratis"
+  final String eventType;
+  final String eventDay;
+  final String tags;
   final bool isOnline;
-  final String? onlineLink; // zoom/meet link kalau online
+  final String? onlineLink;
 
   EventModel({
     this.id,

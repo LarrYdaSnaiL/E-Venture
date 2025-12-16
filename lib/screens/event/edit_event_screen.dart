@@ -1,30 +1,31 @@
 import 'dart:io';
-import 'package:eventure/api/storage_service.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:eventure/navigation/app_router.dart';
-import 'package:eventure/providers/auth_provider.dart';
 import 'package:eventure/widgets/app_header.dart';
 import 'package:eventure/widgets/app_scaffold.dart';
 import 'package:eventure/widgets/custom_button.dart';
-import 'package:eventure/widgets/custom_textfield.dart';
 import 'package:eventure/widgets/custom_file_picker.dart';
+import 'package:eventure/widgets/custom_textfield.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
+import '../../api/database_service.dart';
 import '../../models/event_model.dart';
+import '../../navigation/app_router.dart';
 import 'location_picker_screen.dart';
 
-class CreateEventScreen extends StatefulWidget {
-  const CreateEventScreen({super.key});
+class EditEventScreen extends StatefulWidget {
+  final String eventId;
+
+  const EditEventScreen({super.key, required this.eventId});
 
   @override
-  State<CreateEventScreen> createState() => _CreateEventScreenState();
+  State<EditEventScreen> createState() => _EditEventScreenState();
 }
 
-class _CreateEventScreenState extends State<CreateEventScreen> {
+class _EditEventScreenState extends State<EditEventScreen> {
   final Color primaryColor = const Color(0xFFD64A53);
 
   final nameController = TextEditingController();
@@ -41,6 +42,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   File? _photoImageFile;
   PlatformFile? suratFile;
 
+  String? _bannerUrlFromDb;
+  String? _photoUrlFromDb;
+  String? _skUrlFromDb;
+
   LatLng? _selectedLatLng;
   String? _selectedLocationLabel;
 
@@ -52,6 +57,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   String? _selectedEventType;
   DateTime? _selectedDate;
   bool _isOnline = false;
+
+  bool _initialized = false;
 
   final List<String> _eventTypes = const [
     'Workshop',
@@ -74,109 +81,192 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     super.dispose();
   }
 
+  void _snack(String msg, Color color) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          msg,
+          style: const TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        backgroundColor: color,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final eventRef = FirebaseDatabase.instance.ref('events/${widget.eventId}');
+
     return AppScaffold(
       body: SafeArea(
         child: Column(
           children: [
             const AppHeader(),
             Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildBannerPicker(),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 20),
+              child: StreamBuilder<DatabaseEvent>(
+                stream: eventRef.onValue,
+                builder: (context, snap) {
+                  if (snap.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                          _buildLabel("Nama Event"),
-                          CustomTextField(
-                            hintText: "Masukkan nama event",
-                            icon: Icons.event,
-                            controller: nameController,
-                          ),
-                          const SizedBox(height: 16),
-
-                          _buildLabel("Nama Penyelenggara"),
-                          CustomTextField(
-                            hintText: "Masukkan nama penyelenggara",
-                            icon: Icons.person,
-                            controller: organizerController,
-                          ),
-                          const SizedBox(height: 16),
-
-                          CustomFilePicker(
-                            label: "Surat Keputusan (SK)",
-                            fileName: suratFile?.name,
-                            onFilePicked: (file) {
-                              setState(() => suratFile = file);
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          _buildLabel("Deskripsi Event"),
-                          _buildDescriptionField(),
-                          const SizedBox(height: 16),
-
-                          _buildLabel("Tipe Event"),
-                          const SizedBox(height: 6),
-                          _buildEventTypeDropdown(),
-                          const SizedBox(height: 12),
-                          if (_selectedEventType == 'Lainnya')
-                            CustomTextField(
-                              hintText: "Isi tipe event secara manual",
-                              icon: Icons.edit,
-                              controller: customEventTypeController,
-                            ),
-
-                          const SizedBox(height: 16),
-
-                          _buildLabel("Tag Acara"),
-                          const SizedBox(height: 6),
-                          CustomTextField(
-                            hintText: "Contoh: IT, Pemula, Gratis",
-                            icon: Icons.sell_outlined,
-                            controller: tagsController,
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          _buildLabel("Tanggal Pelaksanaan"),
-                          const SizedBox(height: 6),
-                          _buildDatePicker(),
-
-                          const SizedBox(height: 16),
-
-                          _buildLabel("Lokasi Acara"),
-                          _buildLocationPicker(),
-                          const SizedBox(height: 16),
-
-                          _buildLabel("Waktu Pelaksanaan"),
-                          _buildTimePickers(),
-                          const SizedBox(height: 20),
-
-                          SizedBox(
-                            width: double.infinity,
-                            height: 52,
-                            child: CustomButton(
-                              text: _isSubmitting
-                                  ? "Mempublish..."
-                                  : "Publish Event",
-                              onPressed: _isSubmitting
-                                  ? null
-                                  : () => _publishEvent(),
-                            ),
-                          ),
-                          const SizedBox(height: 40),
-                        ],
+                  final raw = snap.data?.snapshot.value;
+                  if (raw == null || raw is! Map) {
+                    return const Center(
+                      child: Text(
+                        'Event tidak ditemukan',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
+                    );
+                  }
+
+                  final map = Map<String, dynamic>.from(raw);
+                  final event = EventModel.fromJson(map);
+
+                  if (!_initialized) {
+                    _initialized = true;
+
+                    nameController.text = event.title;
+                    organizerController.text = event.organizerName;
+                    descriptionController.text = event.description;
+                    tagsController.text = event.tags;
+                    onlineLinkController.text = event.onlineLink ?? '';
+
+                    _isOnline = event.isOnline;
+
+                    _bannerUrlFromDb = event.bannerUrl;
+                    _photoUrlFromDb = event.photoUrl;
+                    _skUrlFromDb = event.skUrl;
+
+                    locationController.text = event.locationAddress;
+                    _selectedLocationLabel = event.locationAddress;
+
+                    if (!event.isOnline &&
+                        event.locationLat != null &&
+                        event.locationLng != null) {
+                      _selectedLatLng = LatLng(
+                        event.locationLat!,
+                        event.locationLng!,
+                      );
+                    } else {
+                      _selectedLatLng = null;
+                    }
+
+                    try {
+                      _selectedDate = DateTime.parse(event.eventDay);
+                    } catch (_) {
+                      _selectedDate = null;
+                    }
+
+                    _startTime = _parseTime(event.startTime);
+                    _endTime = _parseTime(event.endTime);
+                    _updateDateControllerText();
+
+                    final type = event.eventType.trim();
+                    if (_eventTypes.contains(type)) {
+                      _selectedEventType = type;
+                      customEventTypeController.clear();
+                    } else {
+                      _selectedEventType = 'Lainnya';
+                      customEventTypeController.text = type;
+                    }
+                  }
+
+                  return SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildBannerPicker(),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 20),
+                              _buildLabel("Nama Event"),
+                              CustomTextField(
+                                hintText: "Masukkan nama event",
+                                icon: Icons.event,
+                                controller: nameController,
+                              ),
+                              const SizedBox(height: 16),
+                              _buildLabel("Nama Penyelenggara"),
+                              CustomTextField(
+                                hintText: "Masukkan nama penyelenggara",
+                                icon: Icons.person,
+                                controller: organizerController,
+                              ),
+                              const SizedBox(height: 16),
+                              CustomFilePicker(
+                                label: "Surat Keputusan (SK)",
+                                fileName:
+                                    suratFile?.name ??
+                                    (_skUrlFromDb != null
+                                        ? 'SK sudah ada'
+                                        : null),
+                                onFilePicked: (file) {
+                                  setState(() => suratFile = file);
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              _buildLabel("Deskripsi Event"),
+                              _buildDescriptionField(),
+                              const SizedBox(height: 16),
+                              _buildLabel("Tipe Event"),
+                              const SizedBox(height: 6),
+                              _buildEventTypeDropdown(),
+                              const SizedBox(height: 12),
+                              if (_selectedEventType == 'Lainnya')
+                                CustomTextField(
+                                  hintText: "Isi tipe event secara manual",
+                                  icon: Icons.edit,
+                                  controller: customEventTypeController,
+                                ),
+                              const SizedBox(height: 16),
+                              _buildLabel("Tag Acara"),
+                              const SizedBox(height: 6),
+                              CustomTextField(
+                                hintText: "Contoh: IT, Pemula, Gratis",
+                                icon: Icons.sell_outlined,
+                                controller: tagsController,
+                              ),
+                              const SizedBox(height: 16),
+                              _buildLabel("Tanggal Pelaksanaan"),
+                              const SizedBox(height: 6),
+                              _buildDatePicker(),
+                              const SizedBox(height: 16),
+                              _buildLabel("Lokasi Acara"),
+                              _buildLocationPicker(),
+                              const SizedBox(height: 16),
+                              _buildLabel("Waktu Pelaksanaan"),
+                              _buildTimePickers(),
+                              const SizedBox(height: 20),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 52,
+                                child: CustomButton(
+                                  text: _isSubmitting
+                                      ? "Menyimpan..."
+                                      : "Simpan Perubahan",
+                                  onPressed: _isSubmitting
+                                      ? null
+                                      : () => _updateEvent(event),
+                                ),
+                              ),
+                              const SizedBox(height: 40),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
           ],
@@ -186,14 +276,18 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   }
 
   Widget _buildBannerPicker() {
-    ImageProvider bannerImage = _bannerImageFile != null
+    final ImageProvider bannerImage = _bannerImageFile != null
         ? FileImage(_bannerImageFile!)
+        : (_bannerUrlFromDb != null && _bannerUrlFromDb!.isNotEmpty)
+        ? NetworkImage(_bannerUrlFromDb!)
         : const NetworkImage(
             "https://via.placeholder.com/1080x400/E55B5B/FFFFFF?text=Banner+Event",
           );
 
-    ImageProvider photoImage = _photoImageFile != null
+    final ImageProvider photoImage = _photoImageFile != null
         ? FileImage(_photoImageFile!)
+        : (_photoUrlFromDb != null && _photoUrlFromDb!.isNotEmpty)
+        ? NetworkImage(_photoUrlFromDb!)
         : const NetworkImage(
             "https://via.placeholder.com/200x200/E55B5B/FFFFFF?text=Foto",
           );
@@ -312,13 +406,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     if (result != null && result.files.isNotEmpty) {
       final picked = result.files.first;
       if (picked.size / (1024 * 1024) > 2) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ukuran banner maksimal 2 MB'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _snack('Ukuran banner maksimal 2 MB', Colors.red);
         return;
       }
       if (picked.path != null) {
@@ -337,13 +425,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     if (result != null && result.files.isNotEmpty) {
       final picked = result.files.first;
       if (picked.size / (1024 * 1024) > 2) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ukuran foto maksimal 2 MB'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _snack('Ukuran foto maksimal 2 MB', Colors.red);
         return;
       }
       if (picked.path != null) {
@@ -378,7 +460,11 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   value: e,
                   child: Text(
                     e,
-                    style: const TextStyle(fontFamily: 'Poppins', fontSize: 13),
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               )
@@ -386,9 +472,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
           onChanged: (value) {
             setState(() {
               _selectedEventType = value;
-              if (value != 'Lainnya') {
-                customEventTypeController.clear();
-              }
+              if (value != 'Lainnya') customEventTypeController.clear();
             });
           },
         ),
@@ -450,9 +534,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     );
 
     if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-      });
+      setState(() => _selectedDate = picked);
     }
   }
 
@@ -473,14 +555,25 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             child: Row(
               children: const [
                 Radio<bool>(value: false),
-                Text('Offline'),
+                Text(
+                  'Offline',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 Radio<bool>(value: true),
-                Text('Online'),
+                Text(
+                  'Online',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           ),
           const SizedBox(height: 8),
-
           if (!_isOnline)
             Row(
               children: [
@@ -623,6 +716,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
               fontFamily: 'Poppins',
               fontSize: 11,
               color: Color(0xFF888888),
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
@@ -659,6 +753,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       fontFamily: 'Poppins',
                       fontSize: 11,
                       color: Color(0xFF888888),
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   Text(
@@ -718,17 +813,20 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     }
   }
 
+  TimeOfDay? _parseTime(String raw) {
+    try {
+      final parts = raw.trim().split(':');
+      if (parts.length != 2) return null;
+      return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+    } catch (_) {
+      return null;
+    }
+  }
+
   String _formatTime(TimeOfDay time) {
     final hour = time.hour.toString().padLeft(2, '0');
     final minute = time.minute.toString().padLeft(2, '0');
     return "$hour:$minute";
-  }
-
-  String _formatDateForDb(DateTime d) {
-    final y = d.year.toString();
-    final m = d.month.toString().padLeft(2, '0');
-    final day = d.day.toString().padLeft(2, '0');
-    return '$y-$m-$day'; // contoh: 2025-12-12
   }
 
   Widget _buildLabel(String text) {
@@ -779,7 +877,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     );
   }
 
-  Future<void> _publishEvent() async {
+  Future<void> _updateEvent(EventModel oldEvent) async {
     final name = nameController.text.trim();
     final organizerName = organizerController.text.trim();
     final description = descriptionController.text.trim();
@@ -799,101 +897,52 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         _selectedDate == null ||
         _startTime == null ||
         _endTime == null ||
-        suratFile == null ||
         (_isOnline && onlineLink.isEmpty) ||
         (!_isOnline && (rawLocation.isEmpty || _selectedLatLng == null))) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Lengkapi semua data wajib'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _snack('Lengkapi semua data wajib', Colors.red);
       return;
+    }
+
+    File? skFile;
+    if (suratFile != null && suratFile!.path != null) {
+      skFile = File(suratFile!.path!);
     }
 
     setState(() => _isSubmitting = true);
 
     try {
-      final newEventRef = FirebaseDatabase.instance.ref('events').push();
-      final eventId = newEventRef.key!;
-
-      String? bannerDownloadUrl;
-      String? photoDownloadUrl;
-      String? skDownloadUrl;
-
-      if (_bannerImageFile != null) {
-        final ext = _bannerImageFile!.path.split('.').last;
-        bannerDownloadUrl = await StorageService().uploadDocument(
-          _bannerImageFile!,
-          eventId,
-          'banner.$ext',
-        );
-      }
-
-      if (_photoImageFile != null) {
-        final ext = _photoImageFile!.path.split('.').last;
-        photoDownloadUrl = await StorageService().uploadDocument(
-          _photoImageFile!,
-          eventId,
-          'photo.$ext',
-        );
-      }
-
-      if (suratFile != null && suratFile!.path != null) {
-        final skFile = File(suratFile!.path!);
-        final ext = skFile.path.split('.').last;
-        skDownloadUrl = await StorageService().uploadDocument(
-          skFile,
-          eventId,
-          'sk.$ext',
-        );
-      }
-
-      final event = EventModel(
-        id: eventId,
+      await DatabaseService().updateEvent(
+        eventId: widget.eventId,
+        oldEvent: oldEvent,
         title: name,
-        description: description,
-        locationAddress: _isOnline ? 'Online' : rawLocation,
-        locationLat: _isOnline ? null : _selectedLatLng?.latitude,
-        locationLng: _isOnline ? null : _selectedLatLng?.longitude,
-        organizerId: await AuthProvider().currentUser(),
         organizerName: organizerName,
+        description: description,
+        tags: tags,
+        eventType: resolvedEventType,
+        eventDay: _selectedDate!,
         startTime: _formatTime(_startTime!),
         endTime: _formatTime(_endTime!),
-        createdAt: DateTime.now(),
-        bannerUrl: bannerDownloadUrl,
-        photoUrl: photoDownloadUrl,
-        skUrl: skDownloadUrl,
-        eventType: resolvedEventType,
-        eventDay: _formatDateForDb(_selectedDate!),
-        tags: tags,
         isOnline: _isOnline,
+        locationAddress: rawLocation,
+        locationLat: _selectedLatLng?.latitude,
+        locationLng: _selectedLatLng?.longitude,
         onlineLink: _isOnline ? onlineLink : null,
+        bannerImageFile: _bannerImageFile,
+        photoImageFile: _photoImageFile,
+        skFile: skFile,
       );
-
-      await newEventRef.set(event.toJson());
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Event berhasil dipublish'),
-          backgroundColor: Colors.green,
-        ),
+      _snack('Event berhasil diupdate', Colors.green);
+      context.go(
+        AppRoutes.eventDashboard.replaceFirst(':eventId', widget.eventId),
       );
-      context.go(AppRoutes.home);
     } catch (e) {
-      debugPrint('Error publish event: $e');
+      debugPrint('Error update event: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Terjadi kesalahan saat publish event'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _snack('Terjadi kesalahan saat update event', Colors.red);
     } finally {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-      }
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 }

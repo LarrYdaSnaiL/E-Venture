@@ -19,6 +19,7 @@ class MainApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => AuthProvider(),
       child: MaterialApp.router(
+        theme: ThemeData(fontFamily: 'Poppins'),
         title: 'E-Venture',
         routerConfig: createRouter(),
         debugShowCheckedModeBanner: false,

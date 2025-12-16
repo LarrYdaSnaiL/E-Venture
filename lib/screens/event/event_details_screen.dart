@@ -4,288 +4,484 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:eventure/widgets/app_header.dart';
 import 'package:eventure/widgets/app_scaffold.dart';
 import '../../models/event_model.dart';
 import '../../navigation/app_router.dart';
 
-class EventDetailScreen extends StatelessWidget {
+class EventDetailScreen extends StatefulWidget {
   final String eventId;
 
   const EventDetailScreen({super.key, required this.eventId});
 
+  @override
+  State<EventDetailScreen> createState() => _EventDetailScreenState();
+}
+
+class _EventDetailScreenState extends State<EventDetailScreen> {
   final Color primaryColor = const Color(0xFFD64A53);
+  bool _isSubmittingRsvp = false;
 
   @override
   Widget build(BuildContext context) {
-    final ref = FirebaseDatabase.instance.ref('events/$eventId');
+    final db = DatabaseService();
 
     return AppScaffold(
       body: SafeArea(
-        child: StreamBuilder<DatabaseEvent>(
-          stream: ref.onValue,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+        child: FutureBuilder<String?>(
+          future: Provider.of<AuthProvider>(
+            context,
+            listen: false,
+          ).currentUser(),
+          builder: (context, userSnap) {
+            if (userSnap.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            final raw = snapshot.data?.snapshot.value;
-            if (raw == null || raw is! Map) {
-              return const Center(child: Text('Event tidak ditemukan'));
+            final userId = userSnap.data ?? '';
+            if (userId.isEmpty) {
+              return const Center(
+                child: Text(
+                  'Silakan login terlebih dahulu',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+              );
             }
 
-            final map = Map<String, dynamic>.from(raw);
-            final event = EventModel.fromJson(map);
-            final price = (map['price'] as String?) ?? 'Gratis';
+            return StreamBuilder<DatabaseEvent>(
+              stream: db.getEventStream(widget.eventId),
+              builder: (context, eventSnap) {
+                if (eventSnap.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-            final tags = event.tags
-                .split(',')
-                .map((t) => t.trim())
-                .where((t) => t.isNotEmpty)
-                .toList();
-
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const AppHeader(),
-                  _buildBannerSection(context, event),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0,
-                      vertical: 10,
+                final raw = eventSnap.data?.snapshot.value;
+                if (raw == null || raw is! Map) {
+                  return const Center(
+                    child: Text(
+                      'Event tidak ditemukan',
+                      style: TextStyle(fontWeight: FontWeight.w500),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          event.title,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          event.organizerName,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        if (tags.isNotEmpty)
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 4,
-                            children: tags
-                                .map(
-                                  (tag) => Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFFE5E5),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      tag,
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: Color(0xFFD64F5C),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                        const SizedBox(height: 20),
-                        _buildSectionTitle("Deskripsi Event"),
-                        _buildInfoContainer(
-                          height: 120,
-                          child: SingleChildScrollView(
-                            child: Text(
-                              event.description,
-                              style: const TextStyle(color: Colors.black87),
+                  );
+                }
+
+                final map = Map<String, dynamic>.from(raw);
+                final event = EventModel.fromJson(map);
+                final price = (map['price'] as String?) ?? 'Gratis';
+
+                final tags = event.tags
+                    .split(',')
+                    .map((t) => t.trim())
+                    .where((t) => t.isNotEmpty)
+                    .toList();
+
+                final isOwner = event.organizerId == userId;
+
+                return StreamBuilder<DatabaseEvent>(
+                  stream: db.getUserRsvpStream(widget.eventId, userId),
+                  builder: (context, rsvpSnap) {
+                    final rsvpRaw = rsvpSnap.data?.snapshot.value;
+
+                    final bool isRegistered =
+                        rsvpSnap.hasData &&
+                        rsvpSnap.data!.snapshot.exists &&
+                        rsvpRaw != null;
+
+                    bool isAttended = false;
+                    if (rsvpRaw is Map) {
+                      final rsvpMap = Map<dynamic, dynamic>.from(rsvpRaw);
+                      isAttended = (rsvpMap['attended'] == true);
+                    }
+
+                    final String buttonText = isOwner
+                        ? "Dashboard"
+                        : (isAttended ? "Sudah Hadir" : "RSVP");
+
+                    final bool canPress =
+                        !_isSubmittingRsvp &&
+                        (isOwner || (!isRegistered && !isAttended));
+
+                    return SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const AppHeader(),
+                          _buildBannerSection(context, event),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20.0,
+                              vertical: 10,
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 4,
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: primaryColor),
-                                  borderRadius: BorderRadius.circular(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  event.title,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      price,
-                                      style: TextStyle(
-                                        color: primaryColor,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      event.isOnline
-                                          ? 'Mode: Online'
-                                          : 'Mode: Offline',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: primaryColor,
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
+                                const SizedBox(height: 4),
+                                Text(
+                                  event.organizerName,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                if (tags.isNotEmpty)
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 4,
+                                    children: tags
+                                        .map(
+                                          (tag) => Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFFFE5E5),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              tag,
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: Color(0xFFD64F5C),
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        onPressed: () async => {
-                                          await DatabaseService()
-                                              .registerForEvent(
-                                                eventId,
-                                                await AuthProvider()
-                                                    .currentUser(),
-                                              ),
-                                        },
-                                        child: const Text("RSVP"),
+                                        )
+                                        .toList(),
+                                  ),
+                                const SizedBox(height: 20),
+                                _buildSectionTitle("Deskripsi Event"),
+                                _buildInfoContainer(
+                                  height: 120,
+                                  child: SingleChildScrollView(
+                                    child: Text(
+                                      event.description,
+                                      style: const TextStyle(
+                                        color: Colors.black87,
+                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 6,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Padding(
-                                    padding: EdgeInsets.only(bottom: 6.0),
-                                    child: Text(
-                                      "Lokasi Acara",
-                                      style: TextStyle(fontSize: 14),
-                                    ),
                                   ),
-                                  if (!event.isOnline)
-                                    InkWell(
-                                      borderRadius: BorderRadius.circular(12),
-                                      onTap: () =>
-                                          _openLocationInMaps(context, event),
-                                      child: _buildInfoContainer(
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      flex: 4,
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: primaryColor,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            const Text(
-                                              "Alamat:",
+                                            Text(
+                                              price,
                                               style: TextStyle(
-                                                fontWeight: FontWeight.bold,
+                                                color: primaryColor,
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w600,
                                               ),
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              cleanAddress(
-                                                event.locationAddress,
-                                              ),
+                                              event.isOnline
+                                                  ? 'Mode: Online'
+                                                  : 'Mode: Offline',
                                               style: const TextStyle(
                                                 fontSize: 12,
+                                                color: Colors.grey,
+                                                fontWeight: FontWeight.w500,
                                               ),
                                             ),
                                             const SizedBox(height: 8),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.end,
-                                              children: const [
-                                                Icon(
-                                                  Icons.map,
-                                                  size: 14,
-                                                  color: Colors.red,
-                                                ),
-                                                SizedBox(width: 4),
-                                                Text(
-                                                  "Lihat di Google Maps",
-                                                  style: TextStyle(
-                                                    fontSize: 11,
-                                                    color: Colors.red,
-                                                    fontWeight: FontWeight.w600,
+                                            SizedBox(
+                                              width: double.infinity,
+                                              child: ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: primaryColor,
+                                                  foregroundColor: Colors.white,
+                                                  disabledBackgroundColor:
+                                                      primaryColor.withAlpha(
+                                                        45,
+                                                      ),
+                                                  disabledForegroundColor:
+                                                      Colors.white,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
                                                   ),
                                                 ),
-                                              ],
+                                                onPressed: canPress
+                                                    ? () async {
+                                                        if (isOwner) {
+                                                          context.go(
+                                                            AppRoutes
+                                                                .eventDashboard
+                                                                .replaceFirst(
+                                                                  ':eventId',
+                                                                  widget
+                                                                      .eventId,
+                                                                ),
+                                                          );
+                                                          return;
+                                                        }
+
+                                                        setState(
+                                                          () =>
+                                                              _isSubmittingRsvp =
+                                                                  true,
+                                                        );
+
+                                                        try {
+                                                          await db
+                                                              .registerForEvent(
+                                                                widget.eventId,
+                                                                userId,
+                                                              );
+
+                                                          if (mounted) {
+                                                            ScaffoldMessenger.of(
+                                                              context,
+                                                            ).showSnackBar(
+                                                              const SnackBar(
+                                                                content: Text(
+                                                                  'Berhasil RSVP',
+                                                                  style: TextStyle(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500,
+                                                                  ),
+                                                                ),
+                                                                backgroundColor:
+                                                                    Colors
+                                                                        .green,
+                                                              ),
+                                                            );
+                                                          }
+                                                        } catch (_) {
+                                                          if (mounted) {
+                                                            ScaffoldMessenger.of(
+                                                              context,
+                                                            ).showSnackBar(
+                                                              const SnackBar(
+                                                                content: Text(
+                                                                  'Gagal RSVP, coba lagi',
+                                                                  style: TextStyle(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500,
+                                                                  ),
+                                                                ),
+                                                                backgroundColor:
+                                                                    Colors.red,
+                                                              ),
+                                                            );
+                                                          }
+                                                        } finally {
+                                                          if (mounted) {
+                                                            setState(
+                                                              () =>
+                                                                  _isSubmittingRsvp =
+                                                                      false,
+                                                            );
+                                                          }
+                                                        }
+                                                      }
+                                                    : null,
+                                                child: _isSubmittingRsvp
+                                                    ? const SizedBox(
+                                                        height: 18,
+                                                        width: 18,
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                              strokeWidth: 2,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                      )
+                                                    : FittedBox(
+                                                        fit: BoxFit.scaleDown,
+                                                        child: Text(
+                                                          buttonText,
+                                                          maxLines: 1,
+                                                          softWrap: false,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style:
+                                                              const TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
+                                                              ),
+                                                        ),
+                                                      ),
+                                              ),
                                             ),
                                           ],
                                         ),
                                       ),
-                                    )
-                                  else
-                                    _buildInfoContainer(
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      flex: 6,
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          const Text(
-                                            "Acara Online",
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
+                                          if (!event.isOnline)
+                                            InkWell(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              onTap: () => _openLocationInMaps(
+                                                context,
+                                                event,
+                                              ),
+                                              child: _buildInfoContainer(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    const Text(
+                                                      "Alamat:",
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      cleanAddress(
+                                                        event.locationAddress,
+                                                      ),
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 8),
+                                                    const Align(
+                                                      alignment:
+                                                          Alignment.centerRight,
+                                                      child: Row(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          Icon(
+                                                            Icons.map,
+                                                            size: 14,
+                                                            color: Colors.red,
+                                                          ),
+                                                          SizedBox(width: 4),
+                                                          Text(
+                                                            "Lihat di Google Maps",
+                                                            style: TextStyle(
+                                                              fontSize: 11,
+                                                              color: Colors.red,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            )
+                                          else
+                                            _buildInfoContainer(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  const Text(
+                                                    "Acara Online",
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    event.onlineLink ?? '-',
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            event.onlineLink ?? '-',
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                            ),
-                                          ),
                                         ],
                                       ),
                                     ),
-                                ],
-                              ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                _buildSectionTitle("Waktu diselenggarakan"),
+                                _buildInfoContainer(
+                                  child: Text(
+                                    _buildDateTimeLabel(event),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                _buildSectionTitle("Komentar"),
+                                _buildInfoContainer(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: const [
+                                      Text(
+                                        "Belum ada komentar",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        _buildSectionTitle("Waktu diselenggarakan"),
-                        _buildInfoContainer(
-                          child: Text(_buildDateTimeLabel(event)),
-                        ),
-                        const SizedBox(height: 16),
-                        _buildSectionTitle("FAQ"),
-                        _buildInfoContainer(
-                          height: 100,
-                          child: const Text(
-                            "Q: Apakah acara ini gratis?\n"
-                            "A: Lihat informasi harga di kotak RSVP.\n\n"
-                            "Q: Apakah dapat sertifikat?\n"
-                            "A: Tergantung kebijakan penyelenggara.",
                           ),
-                        ),
-                        const SizedBox(height: 30),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
             );
           },
         ),
@@ -296,7 +492,6 @@ class EventDetailScreen extends StatelessWidget {
   Widget _buildBannerSection(BuildContext context, EventModel event) {
     final bannerUrl = event.bannerUrl;
     final avatarUrl = event.photoUrl;
-
     final timeLabel = "${event.startTime} - ${event.endTime} WIB";
 
     return SizedBox(
@@ -312,9 +507,8 @@ class EventDetailScreen extends StatelessWidget {
                 image: bannerUrl != null && bannerUrl.isNotEmpty
                     ? NetworkImage(bannerUrl)
                     : const NetworkImage(
-                            'https://via.placeholder.com/800x400/E55B5B/FFFFFF?text=Banner+Event',
-                          )
-                          as ImageProvider,
+                        'https://via.placeholder.com/800x400/E55B5B/FFFFFF?text=Banner+Event',
+                      ),
                 fit: BoxFit.cover,
               ),
             ),
@@ -323,25 +517,19 @@ class EventDetailScreen extends StatelessWidget {
           Positioned(
             top: 20,
             right: 20,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                SizedBox(
-                  width: 220,
-                  child: Text(
-                    event.eventType.toUpperCase(),
-                    textAlign: TextAlign.right,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+            child: SizedBox(
+              width: 220,
+              child: Text(
+                event.eventType.toUpperCase(),
+                textAlign: TextAlign.right,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(height: 8),
-              ],
+              ),
             ),
           ),
           Positioned(
@@ -372,7 +560,11 @@ class EventDetailScreen extends StatelessWidget {
             child: Text(
               event.isOnline ? "Online\n$timeLabel" : "Offline\n$timeLabel",
               textAlign: TextAlign.right,
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
           Positioned(
@@ -404,7 +596,11 @@ class EventDetailScreen extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 6.0),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 14, color: Colors.black87),
+        style: const TextStyle(
+          fontSize: 14,
+          color: Colors.black87,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -460,7 +656,12 @@ class EventDetailScreen extends StatelessWidget {
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tidak dapat membuka Google Maps')),
+        const SnackBar(
+          content: Text(
+            'Tidak dapat membuka Google Maps',
+            style: TextStyle(fontWeight: FontWeight.w500),
+          ),
+        ),
       );
     }
   }
