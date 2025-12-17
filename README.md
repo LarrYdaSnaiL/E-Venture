@@ -117,6 +117,9 @@ Aplikasi ini dibangun menggunakan teknologi dan library berikut:
 * **Fonts**: Poppins (Regular, SemiBold, Bold, ExtraBold).
 
 # Team Members
+
 * Rafi Fauzan Tsany Lubis - 231401120
 * Daffa Prawira Akbar - 231401093
 * Farhan Ar Rahman - 231401081
+
+# [Software Requirement System](https://drive.google.com/drive/folders/1Wy7YiPv5rtjolW2Re_0jElb9DOPPBXP-?usp=sharing)
