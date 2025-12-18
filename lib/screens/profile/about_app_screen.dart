@@ -52,8 +52,10 @@ class AboutAppScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      // Ganti Icon ini dengan Image.asset('assets/logo.png') jika punya
-                      child: Icon(Icons.check_box_outlined, size: 50, color: brandColor),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Image.asset('assets/logo/icon.png', fit: BoxFit.cover),
+                      ),
                     ),
                     const SizedBox(height: 15),
                     Text(
@@ -66,10 +68,7 @@ class AboutAppScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 5),
-                    const Text(
-                      "Versi 1.0.0",
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
-                    ),
+                    const Text("Versi 1.0.0", style: TextStyle(color: Colors.grey, fontSize: 14)),
                   ],
                 ),
               ),
@@ -100,9 +99,33 @@ class AboutAppScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      "E-Venture adalah aplikasi inovatif yang dirancang untuk membantu mahasiswa dan wirausahawan muda dalam mengelola kegiatan wirausaha mereka. Temukan event, kelola profil bisnis, dan hubungkan ide-ide hebat dalam satu platform.",
+                      "E-Venture adalah aplikasi mobile yang dirancang untuk mempermudah pengelolaan acara kampus secara digital dan terintegrasi. Aplikasi ini membantu panitia dalam membuat dan mengelola event, membuka pendaftaran online, serta mencatat kehadiran peserta menggunakan sistem QR Code yang cepat dan akurat.\n\n"
+                      "Melalui E-Venture, proses administrasi acara menjadi lebih efisien karena data peserta diolah secara otomatis dan tersimpan dengan aman. Panitia dapat memantau pendaftaran, kehadiran, dan laporan acara secara real-time, tanpa perlu pencatatan manual.\n\n"
+                      "Bagi peserta, E-Venture memberikan pengalaman yang praktis dan modern. Seluruh proses, mulai dari registrasi event hingga absensi kehadiran, dapat dilakukan langsung melalui smartphone, sehingga acara kampus menjadi lebih tertata, transparan, dan profesional.",
                       style: TextStyle(color: Colors.grey[700], height: 1.5),
                       textAlign: TextAlign.justify,
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      "Overview",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      "E-Venture didesain untuk mendukung 2 role utama dalam manajemen event:",
+                      style: TextStyle(color: Colors.grey[700], height: 1.5),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildRoleItem(
+                      "Pengguna",
+                      "Mencari dan mendaftar event yang tersedia.",
+                      brandColor,
+                    ),
+                    const SizedBox(height: 6),
+                    _buildRoleItem(
+                      "Panitia",
+                      "Membuat dan memonitor event yang sudah dibuat.",
+                      brandColor,
                     ),
                   ],
                 ),
@@ -117,7 +140,7 @@ class AboutAppScreen extends StatelessWidget {
 
               // --- 4. Copyright Footer ---
               Text(
-                "© 2024 E-Venture Team.\nAll Rights Reserved.",
+                "© 2025 E-Venture Team.\nAll Rights Reserved.",
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey[400], fontSize: 12),
               ),
@@ -126,6 +149,36 @@ class AboutAppScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  // Widget Helper untuk Role Item
+  Widget _buildRoleItem(String role, String description, Color brandColor) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 6),
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(color: brandColor, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: RichText(
+            text: TextSpan(
+              style: TextStyle(color: Colors.grey[700], height: 1.5),
+              children: [
+                TextSpan(
+                  text: "$role: ",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                TextSpan(text: description),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -165,10 +218,7 @@ class AboutAppScreen extends StatelessWidget {
         ),
         child: Icon(icon, color: color, size: 20),
       ),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
       trailing: Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey[400]),
       onTap: () {
         // Aksi dummy
