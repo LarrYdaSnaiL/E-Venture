@@ -96,10 +96,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
                     final String buttonText = isOwner
                         ? "Dashboard"
-                        : (isAttended ? "Sudah Hadir" : "RSVP");
+                        : isAttended
+                        ? "Sudah Hadir"
+                        : isRegistered
+                        ? "Sudah Terdaftar"
+                        : "RSVP";
 
-                    final bool canPress =
-                        !_isSubmittingRsvp && (isOwner || (!isRegistered && !isAttended));
+                    final bool canPress = !_isSubmittingRsvp && (isOwner || !isRegistered);
 
                     return SingleChildScrollView(
                       child: Column(
@@ -227,6 +230,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                                           return;
                                                         }
 
+                                                        // Store references before async operation
+                                                        final scaffoldMessenger =
+                                                            ScaffoldMessenger.of(context);
+
                                                         setState(() => _isSubmittingRsvp = true);
 
                                                         try {
@@ -236,9 +243,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                                           );
 
                                                           if (mounted) {
-                                                            ScaffoldMessenger.of(
-                                                              context,
-                                                            ).showSnackBar(
+                                                            scaffoldMessenger.showSnackBar(
                                                               const SnackBar(
                                                                 content: Text(
                                                                   'Berhasil RSVP',
@@ -252,9 +257,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                                           }
                                                         } catch (_) {
                                                           if (mounted) {
-                                                            ScaffoldMessenger.of(
-                                                              context,
-                                                            ).showSnackBar(
+                                                            scaffoldMessenger.showSnackBar(
                                                               const SnackBar(
                                                                 content: Text(
                                                                   'Gagal RSVP, coba lagi',
