@@ -159,7 +159,7 @@ class DatabaseService {
         onlineLink: isOnline ? onlineLink : null,
       );
 
-      await _db.ref('events/$eventId').set(updated.toJson());
+      await _db.ref('events/$eventId').update(updated.toJson());
     } catch (e) {
       rethrow;
     }
