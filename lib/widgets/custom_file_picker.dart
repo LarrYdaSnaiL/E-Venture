@@ -17,6 +17,8 @@ class CustomFilePicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
+    final dynamicFontSize = (size.width * 0.035).clamp(12.0, 16.0);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -24,7 +26,7 @@ class CustomFilePicker extends StatelessWidget {
           label,
           style: TextStyle(
             fontFamily: 'Poppins',
-            fontSize: size.width * 0.04,
+            fontSize: dynamicFontSize,
             color: Colors.black,
             fontWeight: FontWeight.w400,
           ),
@@ -97,7 +99,7 @@ class CustomFilePicker extends StatelessWidget {
                   'Pilih File',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: size.width * 0.032,
+                    fontSize: dynamicFontSize,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
@@ -109,7 +111,7 @@ class CustomFilePicker extends StatelessWidget {
                   fileName ?? 'Belum ada file dipilih',
                   style: TextStyle(
                     fontFamily: 'Poppins',
-                    fontSize: size.width * 0.032,
+                    fontSize: dynamicFontSize,
                     color: fileName != null
                         ? Colors.black
                         : const Color(0xFFCCCCCC),

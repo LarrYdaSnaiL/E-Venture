@@ -51,9 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (!mounted) return;
 
         var user = auth.currentUserData;
-        if (user == null) {
-          user = await auth.getUserData();
-        }
+        user ??= await auth.getUserData();
 
         if (user != null) {
           ToastHelper.showShortToast("Selamat Datang, ${user.name}!");

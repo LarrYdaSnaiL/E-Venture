@@ -13,7 +13,7 @@ dependencies:
   firebase_auth: ^6.1.0
   firebase_database: ^12.0.2
   qr_flutter: ^4.1.0
-  mobile_scanner: ^7.1.2
+  mobile_scanner: ^7.1.4
   provider: ^6.1.5+1
   intl: ^0.20.2
   fluttertoast: ^9.0.0
@@ -24,6 +24,10 @@ dependencies:
   google_sign_in: ^7.2.0
   file_picker: ^8.1.6
   image_picker: ^1.2.1
+  google_maps_flutter: ^2.5.0
+  url_launcher: ^6.3.2
+  geocoding: ^4.0.0
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:
@@ -47,3 +51,10 @@ flutter:
           weight: 700
         - asset: assets/fonts/Poppins-ExtraBold.ttf
           weight: 800
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/logo/icon.png"
+  adaptive_icon_background: "#FDF5F7"
+  adaptive_icon_foreground: "assets/logo/icon.png"
