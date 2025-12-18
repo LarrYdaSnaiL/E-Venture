@@ -232,23 +232,16 @@ class _CommentSectionState extends State<CommentSection> {
           ],
 
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Avatar
               CircleAvatar(
                 radius: 18,
                 backgroundColor: primaryColor.withAlpha(50),
-                backgroundImage: widget.currentUserPhotoUrl != null
+                backgroundImage:
+                    widget.currentUserPhotoUrl != null && widget.currentUserPhotoUrl!.isNotEmpty
                     ? NetworkImage(widget.currentUserPhotoUrl!)
-                    : null,
-                child: widget.currentUserPhotoUrl == null
-                    ? Text(
-                        widget.currentUserName.isNotEmpty
-                            ? widget.currentUserName[0].toUpperCase()
-                            : '?',
-                        style: TextStyle(color: primaryColor, fontWeight: FontWeight.w600),
-                      )
-                    : null,
+                    : const AssetImage('assets/images/person.png') as ImageProvider,
               ),
               const SizedBox(width: 10),
 
@@ -258,14 +251,15 @@ class _CommentSectionState extends State<CommentSection> {
                   controller: _commentController,
                   maxLines: 3,
                   minLines: 1,
+                  textAlignVertical: TextAlignVertical.center,
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                   decoration: InputDecoration(
                     hintText: _replyingToCommentId != null
                         ? 'Tulis balasan...'
-                        : 'Tulis komentar...',
+                        : 'Tulis komentar disini...',
                     hintStyle: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w400),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
                     isDense: true,
                   ),
                 ),
@@ -314,19 +308,9 @@ class _CommentSectionState extends State<CommentSection> {
               CircleAvatar(
                 radius: 16,
                 backgroundColor: primaryColor.withAlpha(50),
-                backgroundImage: comment.userPhotoUrl != null
+                backgroundImage: comment.userPhotoUrl != null && comment.userPhotoUrl!.isNotEmpty
                     ? NetworkImage(comment.userPhotoUrl!)
-                    : null,
-                child: comment.userPhotoUrl == null
-                    ? Text(
-                        comment.userName.isNotEmpty ? comment.userName[0].toUpperCase() : '?',
-                        style: TextStyle(
-                          color: primaryColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
-                      )
-                    : null,
+                    : const AssetImage('assets/images/person.png') as ImageProvider,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -480,19 +464,9 @@ class _CommentSectionState extends State<CommentSection> {
               CircleAvatar(
                 radius: 12,
                 backgroundColor: primaryColor.withAlpha(50),
-                backgroundImage: reply.userPhotoUrl != null
+                backgroundImage: reply.userPhotoUrl != null && reply.userPhotoUrl!.isNotEmpty
                     ? NetworkImage(reply.userPhotoUrl!)
-                    : null,
-                child: reply.userPhotoUrl == null
-                    ? Text(
-                        reply.userName.isNotEmpty ? reply.userName[0].toUpperCase() : '?',
-                        style: TextStyle(
-                          color: primaryColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 10,
-                        ),
-                      )
-                    : null,
+                    : const AssetImage('assets/images/person.png') as ImageProvider,
               ),
               const SizedBox(width: 6),
               Expanded(
