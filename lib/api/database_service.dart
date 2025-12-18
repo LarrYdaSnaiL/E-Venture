@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:eventure/api/storage_service.dart';
+import 'package:eventure/models/comment_model.dart';
 import 'package:eventure/services/format_date.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:eventure/models/user_model.dart';
@@ -133,11 +134,7 @@ class DatabaseService {
 
       if (skFile != null) {
         final ext = skFile.path.split('.').last;
-        skDownloadUrl = await StorageService().uploadDocument(
-          skFile,
-          eventId,
-          'sk.$ext',
-        );
+        skDownloadUrl = await StorageService().uploadDocument(skFile, eventId, 'sk.$ext');
       }
 
       final updated = EventModel(
@@ -249,10 +246,112 @@ class DatabaseService {
     }
   }
 
-  Stream<DatabaseEvent> getEventAttendanceStream(
-    String eventId,
-    String userId,
-  ) {
+  Stream<DatabaseEvent> getEventAttendanceStream(String eventId, String userId) {
     return _db.ref('events/$eventId/rsvps/$userId/attended').onValue;
+  }
+
+  // ============ COMMENT METHODS ============
+
+  /// Stream semua komentar dari suatu event
+  Stream<List<CommentModel>> getCommentStream(String eventId) {
+    return _db.ref('events/$eventId/comments').onValue.map((event) {
+      final data = event.snapshot.value;
+
+      if (data == null || data is! Map) {
+        return <CommentModel>[];
+      }
+
+      final raw = Map<dynamic, dynamic>.from(data);
+      final comments = <CommentModel>[];
+
+      for (final entry in raw.entries) {
+        final commentId = entry.key.toString();
+        final commentData = entry.value;
+
+        if (commentData is Map) {
+          comments.add(CommentModel.fromJson(commentId, Map<String, dynamic>.from(commentData)));
+        }
+      }
+
+      // Sort by createdAt descending (newest first)
+      comments.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      return comments;
+    });
+  }
+
+  /// Kirim komentar baru ke event
+  Future<void> sendComment({
+    required String eventId,
+    required String userId,
+    required String userName,
+    String? userPhotoUrl,
+    required String content,
+  }) async {
+    try {
+      final commentRef = _db.ref('events/$eventId/comments').push();
+
+      final comment = CommentModel(
+        id: commentRef.key!,
+        userId: userId,
+        userName: userName,
+        userPhotoUrl: userPhotoUrl,
+        content: content,
+        createdAt: DateTime.now(),
+      );
+
+      await commentRef.set(comment.toJson());
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Balas komentar yang sudah ada
+  Future<void> sendReply({
+    required String eventId,
+    required String commentId,
+    required String userId,
+    required String userName,
+    String? userPhotoUrl,
+    required String content,
+    required String repliedUserId,
+    required String repliedUserName,
+  }) async {
+    try {
+      final replyRef = _db.ref('events/$eventId/comments/$commentId/replies').push();
+
+      final reply = ReplyModel(
+        id: replyRef.key!,
+        userId: userId,
+        userName: userName,
+        userPhotoUrl: userPhotoUrl,
+        content: content,
+        repliedUserId: repliedUserId,
+        repliedUserName: repliedUserName,
+        createdAt: DateTime.now(),
+      );
+
+      await replyRef.set(reply.toJson());
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Hapus komentar
+  Future<void> deleteComment(String eventId, String commentId) async {
+    try {
+      await _db.ref('events/$eventId/comments/$commentId').remove();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Hapus reply
+  Future<void> deleteReply(String eventId, String commentId, String replyId) async {
+    try {
+      await _db.ref('events/$eventId/comments/$commentId/replies/$replyId').remove();
+    } catch (e) {
+      rethrow;
+    }
   }
 }

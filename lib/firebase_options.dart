@@ -46,6 +46,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '761120592751',
     projectId: 'e-venture-6d354',
     authDomain: 'e-venture-6d354.firebaseapp.com',
+    databaseURL: 'https://e-venture-6d354-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'e-venture-6d354.firebasestorage.app',
     measurementId: 'G-H3595Y785L',
   );
@@ -55,6 +56,7 @@ class DefaultFirebaseOptions {
     appId: '1:761120592751:android:9d176c1389d4fbf16a4e9a',
     messagingSenderId: '761120592751',
     projectId: 'e-venture-6d354',
+    databaseURL: 'https://e-venture-6d354-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'e-venture-6d354.firebasestorage.app',
   );
 
@@ -63,7 +65,10 @@ class DefaultFirebaseOptions {
     appId: '1:761120592751:ios:c42ef0a99cafc40f6a4e9a',
     messagingSenderId: '761120592751',
     projectId: 'e-venture-6d354',
+    databaseURL: 'https://e-venture-6d354-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'e-venture-6d354.firebasestorage.app',
+    androidClientId: '761120592751-8nn5qb1fuev99erheqovej2v0ijslaf8.apps.googleusercontent.com',
+    iosClientId: '761120592751-k4oi5u282q6l776b8f5r1b5t8p93epit.apps.googleusercontent.com',
     iosBundleId: 'com.thethreemasketeers.eventure',
   );
 
@@ -72,7 +77,10 @@ class DefaultFirebaseOptions {
     appId: '1:761120592751:ios:c42ef0a99cafc40f6a4e9a',
     messagingSenderId: '761120592751',
     projectId: 'e-venture-6d354',
+    databaseURL: 'https://e-venture-6d354-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'e-venture-6d354.firebasestorage.app',
+    androidClientId: '761120592751-8nn5qb1fuev99erheqovej2v0ijslaf8.apps.googleusercontent.com',
+    iosClientId: '761120592751-k4oi5u282q6l776b8f5r1b5t8p93epit.apps.googleusercontent.com',
     iosBundleId: 'com.thethreemasketeers.eventure',
   );
 
@@ -82,6 +90,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '761120592751',
     projectId: 'e-venture-6d354',
     authDomain: 'e-venture-6d354.firebaseapp.com',
+    databaseURL: 'https://e-venture-6d354-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'e-venture-6d354.firebasestorage.app',
     measurementId: 'G-XXLKSC9C9S',
   );

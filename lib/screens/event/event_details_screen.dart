@@ -1,5 +1,7 @@
 import 'package:eventure/api/database_service.dart';
+import 'package:eventure/models/user_model.dart';
 import 'package:eventure/providers/auth_provider.dart';
+import 'package:eventure/widgets/comment_section.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -27,20 +29,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final db = DatabaseService();
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     return AppScaffold(
       body: SafeArea(
-        child: FutureBuilder<String?>(
-          future: Provider.of<AuthProvider>(
-            context,
-            listen: false,
-          ).currentUser(),
+        child: FutureBuilder<UserModel?>(
+          future: authProvider.getUserData(),
           builder: (context, userSnap) {
             if (userSnap.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            final userId = userSnap.data ?? '';
+            final currentUser = userSnap.data;
+            final userId = currentUser?.uid ?? '';
             if (userId.isEmpty) {
               return const Center(
                 child: Text(
@@ -85,9 +86,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     final rsvpRaw = rsvpSnap.data?.snapshot.value;
 
                     final bool isRegistered =
-                        rsvpSnap.hasData &&
-                        rsvpSnap.data!.snapshot.exists &&
-                        rsvpRaw != null;
+                        rsvpSnap.hasData && rsvpSnap.data!.snapshot.exists && rsvpRaw != null;
 
                     bool isAttended = false;
                     if (rsvpRaw is Map) {
@@ -100,8 +99,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         : (isAttended ? "Sudah Hadir" : "RSVP");
 
                     final bool canPress =
-                        !_isSubmittingRsvp &&
-                        (isOwner || (!isRegistered && !isAttended));
+                        !_isSubmittingRsvp && (isOwner || (!isRegistered && !isAttended));
 
                     return SingleChildScrollView(
                       child: Column(
@@ -110,19 +108,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           const AppHeader(),
                           _buildBannerSection(context, event),
                           Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20.0,
-                              vertical: 10,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   event.title,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -147,8 +139,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                             ),
                                             decoration: BoxDecoration(
                                               color: const Color(0xFFFFE5E5),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
+                                              borderRadius: BorderRadius.circular(8),
                                             ),
                                             child: Text(
                                               tag,
@@ -186,16 +177,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                         width: double.infinity,
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          border: Border.all(
-                                            color: primaryColor,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
+                                          border: Border.all(color: primaryColor),
+                                          borderRadius: BorderRadius.circular(12),
                                         ),
                                         child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               price,
@@ -207,9 +193,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              event.isOnline
-                                                  ? 'Mode: Online'
-                                                  : 'Mode: Offline',
+                                              event.isOnline ? 'Mode: Online' : 'Mode: Offline',
                                               style: const TextStyle(
                                                 fontSize: 12,
                                                 color: Colors.grey,
@@ -223,46 +207,33 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                                 style: ElevatedButton.styleFrom(
                                                   backgroundColor: primaryColor,
                                                   foregroundColor: Colors.white,
-                                                  disabledBackgroundColor:
-                                                      primaryColor.withAlpha(
-                                                        45,
-                                                      ),
-                                                  disabledForegroundColor:
-                                                      Colors.white,
+                                                  disabledBackgroundColor: primaryColor.withAlpha(
+                                                    45,
+                                                  ),
+                                                  disabledForegroundColor: Colors.white,
                                                   shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          8,
-                                                        ),
+                                                    borderRadius: BorderRadius.circular(8),
                                                   ),
                                                 ),
                                                 onPressed: canPress
                                                     ? () async {
                                                         if (isOwner) {
                                                           context.go(
-                                                            AppRoutes
-                                                                .eventDashboard
-                                                                .replaceFirst(
-                                                                  ':eventId',
-                                                                  widget
-                                                                      .eventId,
-                                                                ),
+                                                            AppRoutes.eventDashboard.replaceFirst(
+                                                              ':eventId',
+                                                              widget.eventId,
+                                                            ),
                                                           );
                                                           return;
                                                         }
 
-                                                        setState(
-                                                          () =>
-                                                              _isSubmittingRsvp =
-                                                                  true,
-                                                        );
+                                                        setState(() => _isSubmittingRsvp = true);
 
                                                         try {
-                                                          await db
-                                                              .registerForEvent(
-                                                                widget.eventId,
-                                                                userId,
-                                                              );
+                                                          await db.registerForEvent(
+                                                            widget.eventId,
+                                                            userId,
+                                                          );
 
                                                           if (mounted) {
                                                             ScaffoldMessenger.of(
@@ -272,14 +243,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                                                 content: Text(
                                                                   'Berhasil RSVP',
                                                                   style: TextStyle(
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w500,
+                                                                    fontWeight: FontWeight.w500,
                                                                   ),
                                                                 ),
-                                                                backgroundColor:
-                                                                    Colors
-                                                                        .green,
+                                                                backgroundColor: Colors.green,
                                                               ),
                                                             );
                                                           }
@@ -292,22 +259,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                                                 content: Text(
                                                                   'Gagal RSVP, coba lagi',
                                                                   style: TextStyle(
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w500,
+                                                                    fontWeight: FontWeight.w500,
                                                                   ),
                                                                 ),
-                                                                backgroundColor:
-                                                                    Colors.red,
+                                                                backgroundColor: Colors.red,
                                                               ),
                                                             );
                                                           }
                                                         } finally {
                                                           if (mounted) {
                                                             setState(
-                                                              () =>
-                                                                  _isSubmittingRsvp =
-                                                                      false,
+                                                              () => _isSubmittingRsvp = false,
                                                             );
                                                           }
                                                         }
@@ -317,12 +279,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                                     ? const SizedBox(
                                                         height: 18,
                                                         width: 18,
-                                                        child:
-                                                            CircularProgressIndicator(
-                                                              strokeWidth: 2,
-                                                              color:
-                                                                  Colors.white,
-                                                            ),
+                                                        child: CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                          color: Colors.white,
+                                                        ),
                                                       )
                                                     : FittedBox(
                                                         fit: BoxFit.scaleDown,
@@ -330,14 +290,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                                           buttonText,
                                                           maxLines: 1,
                                                           softWrap: false,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          style:
-                                                              const TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w500,
-                                                              ),
+                                                          overflow: TextOverflow.ellipsis,
+                                                          style: const TextStyle(
+                                                            fontWeight: FontWeight.w500,
+                                                          ),
                                                         ),
                                                       ),
                                               ),
@@ -350,47 +306,33 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                     Expanded(
                                       flex: 6,
                                       child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           if (!event.isOnline)
                                             InkWell(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              onTap: () => _openLocationInMaps(
-                                                context,
-                                                event,
-                                              ),
+                                              borderRadius: BorderRadius.circular(12),
+                                              onTap: () => _openLocationInMaps(context, event),
                                               child: _buildInfoContainer(
                                                 child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
                                                   children: [
                                                     const Text(
                                                       "Alamat:",
-                                                      style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                      ),
+                                                      style: TextStyle(fontWeight: FontWeight.w600),
                                                     ),
                                                     const SizedBox(height: 4),
                                                     Text(
-                                                      cleanAddress(
-                                                        event.locationAddress,
-                                                      ),
+                                                      cleanAddress(event.locationAddress),
                                                       style: const TextStyle(
                                                         fontSize: 12,
-                                                        fontWeight:
-                                                            FontWeight.w500,
+                                                        fontWeight: FontWeight.w500,
                                                       ),
                                                     ),
                                                     const SizedBox(height: 8),
                                                     const Align(
-                                                      alignment:
-                                                          Alignment.centerRight,
+                                                      alignment: Alignment.centerRight,
                                                       child: Row(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
+                                                        mainAxisSize: MainAxisSize.min,
                                                         children: [
                                                           Icon(
                                                             Icons.map,
@@ -403,9 +345,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                                             style: TextStyle(
                                                               fontSize: 11,
                                                               color: Colors.red,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w600,
+                                                              fontWeight: FontWeight.w600,
                                                             ),
                                                           ),
                                                         ],
@@ -418,23 +358,18 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                           else
                                             _buildInfoContainer(
                                               child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
+                                                crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
                                                   const Text(
                                                     "Acara Online",
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
+                                                    style: TextStyle(fontWeight: FontWeight.w600),
                                                   ),
                                                   const SizedBox(height: 4),
                                                   Text(
                                                     event.onlineLink ?? '-',
                                                     style: const TextStyle(
                                                       fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.w500,
+                                                      fontWeight: FontWeight.w500,
                                                     ),
                                                   ),
                                                 ],
@@ -450,28 +385,18 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                 _buildInfoContainer(
                                   child: Text(
                                     _buildDateTimeLabel(event),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                    style: const TextStyle(fontWeight: FontWeight.w500),
                                   ),
                                 ),
                                 const SizedBox(height: 16),
                                 _buildSectionTitle("Komentar"),
-                                _buildInfoContainer(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: const [
-                                      Text(
-                                        "Belum ada komentar",
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                CommentSection(
+                                  eventId: widget.eventId,
+                                  currentUserId: userId,
+                                  currentUserName: currentUser?.name ?? 'Anonim',
+                                  currentUserPhotoUrl: currentUser?.profilePicture,
+                                  isOrganizer: isOwner,
+                                  organizerId: event.organizerId,
                                 ),
                               ],
                             ),
@@ -538,19 +463,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             child: InkWell(
               onTap: () => context.go(AppRoutes.home),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: primaryColor,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
-                  Icons.arrow_back_ios_new,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
               ),
             ),
           ),
@@ -560,11 +478,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             child: Text(
               event.isOnline ? "Online\n$timeLabel" : "Offline\n$timeLabel",
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w500),
             ),
           ),
           Positioned(
@@ -572,10 +486,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             left: 30,
             child: Container(
               padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
+              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
               child: CircleAvatar(
                 radius: 50,
                 backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
@@ -596,11 +507,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       padding: const EdgeInsets.only(bottom: 6.0),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 14,
-          color: Colors.black87,
-          fontWeight: FontWeight.w600,
-        ),
+        style: const TextStyle(fontSize: 14, color: Colors.black87, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -632,10 +539,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     return raw.replaceAll(",,", ",").replaceAll(RegExp(r',$'), "").trim();
   }
 
-  Future<void> _openLocationInMaps(
-    BuildContext context,
-    EventModel event,
-  ) async {
+  Future<void> _openLocationInMaps(BuildContext context, EventModel event) async {
     if (event.isOnline) return;
 
     final lat = event.locationLat;
@@ -644,9 +548,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
     Uri uri;
     if (lat != null && lng != null) {
-      uri = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
-      );
+      uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
     } else {
       uri = Uri.parse(
         'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}',
